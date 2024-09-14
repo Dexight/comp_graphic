@@ -15,18 +15,19 @@
             }
 
             div {
-                margin-top: 
-                20px;
+                margin-top: 20px;
             }
             
             canvas {
                 border: 5px; 
                 border-style:double;
             }
+
             select {
                 width: 100px; text-align: center;
                 font-size: 20px;
-                font-family:Arial, Helvetica, sans-serif;
+                font-family: Arial, Helvetica, sans-serif;
+                font-weight: 600;
             }
 
         </style>
@@ -38,13 +39,15 @@
             <canvas id="canvas" width="1590" height="400"></canvas>
             <div>
                 <select id="functionSelect">
-                    <option name="SelectRGB" value="default">default</option>
-                    <option name="SelectRGB" value="Red" style="color: Red;">red</option>
-                    <option name="SelectRGB" value="Green" style="color: Green;">green</option>
-                    <option name="SelectRGB" value="Blue" style="color: Blue;">blue</option>
+                    <option name="SelectRGB" value="default" style="font-weight: 600;">default</option>
+                    <option name="SelectRGB" value="Red" style="color: Red; font-weight: 600;">red</option>
+                    <option name="SelectRGB" value="Green" style="color: Green; font-weight: 600;">green</option>
+                    <option name="SelectRGB" value="Blue" style="color: Blue; font-weight: 600;">blue</option>
                 </select>
             </div>
         </div>
+        <div id="container" style="height: 400px;"></div>
+        <script src="https://cdn.anychart.com/releases/8.12.1/js/anychart-base.min.js" type="text/javascript"></script>
         <script src="script.js"></script>
     </body>
 </html>
