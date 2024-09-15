@@ -104,14 +104,16 @@ function drawHistogram() {
         // Создаем график
         var chart = anychart.column();
 
-        var seriesB = chart.column(dataB);
-        seriesB.name("Blue");
-        
-        var seriesG = chart.column(dataG);
-        seriesG.name("Green");
-        
+        chart.palette(["#ff3300", "#00ff00", "#0000cc"]);
+
         var seriesR = chart.column(dataR);
         seriesR.name("Red");
+
+        var seriesG = chart.column(dataG);
+        seriesG.name("Green");
+
+        var seriesB = chart.column(dataB);
+        seriesB.name("Blue");
 
         chart.title("Гистограмма RGB");
         chart.xAxis().title("Intensity");
