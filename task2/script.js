@@ -29,7 +29,7 @@ img.onload = function() {
         dictionaryG[imgData[i+1]] += 1;
         dictionaryB[imgData[i+2]] += 1;
     }
-    drawHistogram();
+    drawHistogram(1, 1, 1);
 };
 
 var default_img = function() {
@@ -88,7 +88,12 @@ document.getElementById('functionSelect').addEventListener('change', function() 
     }
 });
 
-function drawHistogram() {
+//Всё что связано с гистограммами
+
+function drawHistogram(RedHist, GreenHist, BlueHist) {
+    //очистка гистограммы
+    document.getElementById('container').innerHTML = ""
+
     anychart.onDocumentReady(function() {
         // Преобразуем прошлые данные в новые (для гистограммы - из строчного в столбцевое представление)
         var dataR = [];
@@ -103,18 +108,31 @@ function drawHistogram() {
 
         // Создаем график
         var chart = anychart.column();
+        var pallete = []
+        
+        if (RedHist == 1) pallete.push("#ff3300");
+        if (GreenHist == 1) pallete.push("#00ff00");
+        if (BlueHist == 1) pallete.push("#0000cc");
 
-        chart.palette(["#ff3300", "#00ff00", "#0000cc"]);
+        chart.palette(pallete);
 
-        var seriesR = chart.column(dataR);
-        seriesR.name("Red");
+        if (RedHist == 1)
+        {
+            var seriesR = chart.column(dataR);
+            seriesR.name("Red");
+        }
 
-        var seriesG = chart.column(dataG);
-        seriesG.name("Green");
+        if (GreenHist == 1)
+        {
+            var seriesG = chart.column(dataG);
+            seriesG.name("Green");
+        }
 
-        var seriesB = chart.column(dataB);
-        seriesB.name("Blue");
-
+        if (BlueHist == 1)
+        {
+            var seriesB = chart.column(dataB);
+            seriesB.name("Blue");
+        }
         chart.title("Гистограмма RGB");
         chart.xAxis().title("Intensity");
         chart.yAxis().title("Count");
@@ -123,3 +141,19 @@ function drawHistogram() {
         chart.draw();
     });
 }
+
+document.getElementById('functionSelect2').addEventListener('change', function() {
+    const selectedValue = this.value;
+    
+    switch (selectedValue) {
+        case 'origin':  drawHistogram(1, 1, 1);
+                        break;
+        case 'Red':     drawHistogram(1, 0, 0);
+                        break;
+        case 'Green':   drawHistogram(0, 1, 0)
+                        break;
+        case 'Blue':    drawHistogram(0, 0, 1)
+                        break;
+        default:        drawHistogram(1, 1, 1);
+    }
+});
