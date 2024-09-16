@@ -8,23 +8,35 @@
         .slider {
             width: 300px;
         }
+
+        body {
+                background-color: antiquewhite;
+            }
+            
+        canvas {
+                border: 5px; 
+                border-style:double;
+            }
     </style>
 </head>
 
 <body>
-    <h1> RGB to HSV Converter</h1>
-    <input type="file" id="uploadImage" accept="image/*"/> <br><br>
-    <canvas id="canvas" width="500" height="500"></canvas>  <br><br>
-    <label>Hue: </label> 
-    <input type="range" id="hue" min="0" max="360" value="0" class="slider">
-    <span id="hueValue">0</span><br><br>
-    <label>Saturation: </label> 
-    <input type="range" id="saturation" min="0" max="100" value="100" class="slider">
-    <span id="saturationValue">100</span><br><br>
-    <label>Brightness: </label> 
-    <input type="range" id="brightness" min="0" max="100" value="100" class="slider">
-    <span id="brightnessValue">100</span><br><br>
-
-    <button id="DownloadButton" > Download </button>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <h1>HSV Редактор</h1>
+        <canvas id="canvas"></canvas>  <br><br>
+        <input type="file" id="uploadImage" accept="image/*"/> <br><br>
+        <div style="display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; border-radius: 20px; background-color: white;">
+            <label>Тон: </label>
+            <input type="range" id="hue" min="-100" max="100" value="0" class="slider">
+            <span id="hueValue">0</span>
+            <label>Насыщенность: </label> 
+            <input type="range" id="saturation" min="-100" max="100" value="0" class="slider">
+            <span id="saturationValue">0</span>
+            <label>Яркость: </label> 
+            <input type="range" id="brightness" min="-100" max="100" value="0" class="slider">
+            <span id="brightnessValue">0</span>
+        </div>
+        <button id="DownloadButton" style="margin-top: 20px;"> Скачать изображение </button>
+    </div>
     <script src="script.js"></script>
 </body>

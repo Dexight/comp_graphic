@@ -13,12 +13,12 @@ document.getElementById('uploadImage').addEventListener('change', function(event
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img,0,0);
+            canvas.style.width = "900px";
             updateCanvas(); 
         }
         img.src = e.target.result;
     }
     reader.readAsDataURL(file);
-
 });
 
 document.getElementById('hue').addEventListener('input', updateCanvas);
@@ -74,14 +74,13 @@ function hsv2rgb(h,s,v){
 function updateCanvas() {
     ctx.drawImage(img,0,0);
     data = ctx.getImageData(0, 0, img.width, img.height);
-
-    console.log(data);
     
-    const hue = parseInt(document.getElementById('hue').value);
+    const hueSlider = parseInt(document.getElementById('hue').value);
+    const hue =  (hueSlider < 0)? -hueSlider * 1.8 : hueSlider * 1.8;
     const saturation = parseInt(document.getElementById('saturation').value) / 100;
     const brightness = parseInt(document.getElementById('brightness').value) / 100;
 
-    document.getElementById('hueValue').textContent = hue;
+    document.getElementById('hueValue').textContent = Math.round(hue / 1.8);
     document.getElementById('saturationValue').textContent = Math.round(saturation * 100);
     document.getElementById('brightnessValue').textContent = Math.round(brightness * 100);
 
@@ -91,13 +90,12 @@ function updateCanvas() {
         let r = data.data[i];
         let g = data.data[i + 1];
         let b = data.data[i + 2];
-
+        
         let [h, s, v] = rgb2hsv(r, g, b);
-        // console.log(h,s,v);
 
-        h = hue;
-        s = saturation;
-        v = brightness;
+        h += hue;
+        s = Math.min(Math.max(s + s * saturation, 0), 1);
+        v = Math.min(Math.max(v + v * brightness, 0), 1);;
 
         [r, g, b] = hsv2rgb(h, s, v);
 
