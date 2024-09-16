@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Grayscaling and inverting color | Canvas pixel manipulation</title>
+	<style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+		#canvas {
+			margin: auto;
+			display: block;
+		}
+
+		input[type="radio"] {
+			transform: scale(1.5);
+		}
+
+		form {
+			text-align: center;
+			margin-top: 20px;
+		}
+
+		form label {
+			font-size: 1.2em;
+            margin-right: 10px;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<form>
+		<input type="radio" id="original" name="color" value="original" checked>
+		<label for="original">Original</label>
+
+		<input type="radio" id="grayscale_1" name="color" value="grayscale_1">
+		<label for="grayscale">Grayscale 1</label>
+
+		<input type="radio" id="grayscale_2" name="color" value="grayscale_2">
+		<label for="inverted">Grayscale 2</label>
+        
+        <input type="radio" id="difference" name="color" value="difference">
+		<label for="inverted">Difference</label>
+	</form>
+    <canvas id="histogram" width="400" height="100"></canvas>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+	<script src="app.js"></script>
+</body>
+</html>
