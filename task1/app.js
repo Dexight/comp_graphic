@@ -1,15 +1,20 @@
 var img = new Image();
 img.crossOrigin = 'anonymous';
-img.src = "ФРУКТЫ.jpg";
+img.src = "https://sun9-46.userapi.com/c846019/v846019815/111b99/JgBfDIXohNo.jpg";
 console.log(img);
 
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 
+const hist1 = Array(256).fill(0);
+const hist2 = Array(256).fill(0);
+
 img.onload = function() {
 	canvas.width = img.width;
 	canvas.height = img.height;
-	ctx.drawImage(img, 0, 0);
+	
+    drawHistogram();
+    ctx.drawImage(img, 0, 0);
 };
 
 var original = function() {
@@ -25,6 +30,7 @@ var grayscale_1 = function() {
 		data[i]     = avg; // red
 		data[i + 1] = avg; // green
 		data[i + 2] = avg; // blue
+        hist1[Math.round(avg)]++;
 	}
 	ctx.putImageData(imageData, 0, 0);
 };
@@ -38,6 +44,7 @@ var grayscale_2 = function() {
 		data[i]     = avg; // red
 		data[i + 1] = avg; // green
 		data[i + 2] = avg; // blue
+        hist2[Math.round(avg)]++;
 	}
 	ctx.putImageData(imageData, 0, 0);
 };
@@ -69,6 +76,41 @@ var difference = function() {
 	ctx.putImageData(diffData, 0, 0);
 };
 
+var drawHistogram = function() {
+    const ctx_hist = document.getElementById('histogram').getContext('2d');
+
+    grayscale_1();
+    const imageData1 = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data1 = imageData1.data;
+
+    grayscale_2();
+    const imageData2 = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data2 = imageData2.data;
+  
+    const chart = new Chart(ctx_hist, {
+      type: 'bar',
+      data: {
+        labels: Array.from({ length: 256 }, (_, i) => i), // Метки от 0 до 255
+        datasets: [{
+          label: 'Grayscale 1',
+          data: hist1,
+          backgroundColor: 'red',
+        }, {
+          label: 'Grayscale 2',
+          data: hist2,
+          backgroundColor: 'blue',
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            beginAtZero: true,
+            display: false, 
+          }
+        }
+      }
+    });
+  }
 
 const inputs = document.querySelectorAll('[name=color]');
 for (const input of inputs) {
@@ -85,4 +127,3 @@ for (const input of inputs) {
 		}
 	});
 }
-
