@@ -5,6 +5,7 @@ console.log(img);
 
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
+canvas.style.width = "1400px";
 
 const hist1 = Array(256).fill(0);
 const hist2 = Array(256).fill(0);
