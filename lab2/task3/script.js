@@ -107,3 +107,10 @@ function updateCanvas() {
 
     ctx.putImageData(newData, 0, 0);
 }
+
+document.getElementById("DownloadButton").addEventListener("click", function(){
+    var link = document.createElement("a");
+    link.download = "result.png";
+    link.href = canvas.toDataURL();
+    link.click();
+})
