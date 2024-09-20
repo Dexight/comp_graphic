@@ -12,23 +12,27 @@ const y1Input = document.getElementById('y1');
 const button = document.getElementById('drawButton');
 
 function setPixel(x, y){
-    //const x_decart = x + canvas.width / 2; // переход к декартовой системе координат
-    //const y_decart = canvas.height / 2 - y; // переход к декартовой системе координат
-    //ctx.fillRect(x_decart, y_decart, 1, 1);   
+    // const x_decart = x + canvas.width / 2; // переход к декартовой системе координат
+    // const y_decart = canvas.height / 2 - y; // переход к декартовой системе координат
+    // ctx.fillRect(x_decart, y_decart, 1, 1);   
     ctx.fillRect(x, y, 1, 1);
 }
 
 function bresenham(x0,y0,x1,y1){
 
-    if(Math.abs(x1 - x0) < Math.abs(y1 - y0)){
-        [x0, y0] = [y0,x0];
-        [x1, y1] = [y1,x1];
+    // if(Math.abs(x1 - x0) < Math.abs(y1 - y0)){
+    //     [x0, y0] = [y0,x0];
+    //     [x1, y1] = [y1,x1];
 
-    }
+    // }
 
     if(x0 > x1){
         [x0,x1] = [x1,x0];
     }
+
+    // if(y0 > y1){
+    //     [y0,y1] = [y1,y0];
+    // }
 
     let dx = Math.abs(x1-x0);
     let dy = Math.abs(y1-y0);
@@ -59,7 +63,7 @@ drawButton.addEventListener('click', () => {
     const y1 = parseInt(y1Input.value);
 
     // Очищаем canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Рисуем отрезок
     bresenham(x0, y0, x1, y1);
