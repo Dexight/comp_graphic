@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru"></html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+    </style>
+    <title>Алгоритм Брезенхема</title>
+</head>
+<body>
+<h1>Рисование отрезка алгоритмом Брезенхема</h1>
+<canvas id="canvas" width="500" height="500"></canvas>
+<div id="controls">
+    <label for="x0">x0</label>
+    <input type="number" id="x0" value="0">
+    <label for="y0">y0</label>
+    <input type="number" id="y0" value="0">
+    <label for="x1">x1</label>
+    <input type="number" id="x1" value="100">
+    <label for="y1">y1</label>
+    <input type="number" id="y1" value="100">
+    <button id="drawButton">Нарисовать отрезок</button>
+</div>
+
+<script src="bresenham.js"></script>
+</body>
+</html>
