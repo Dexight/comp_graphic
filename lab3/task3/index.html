@@ -1,14 +1,40 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru"></html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        canvas {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #000000;
+        }
     </style>
     <title> Градиентное окрашивание треугольника</title>
 </head>
-<body>
+<body style="display: flex; flex-direction: column; align-items: center;">
+    <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
 
+    <!-- Поля ввода координат -->
+    <div style="margin-top: 20px;">
+        <label for="x1">X1:</label>
+        <input type="number" id="x1" value="200">
+        <label for="y1">Y1:</label>
+        <input type="number" id="y1" value="200"><br><br>
+
+        <label for="x2">X2:</label>
+        <input type="number" id="x2" value="400">
+        <label for="y2">Y2:</label>
+        <input type="number" id="y2" value="100"><br><br>
+
+        <label for="x3">X3:</label>
+        <input type="number" id="x3" value="300">
+        <label for="y3">Y3:</label>
+        <input type="number" id="y3" value="400"><br><br>
+
+    </div>
+    <!--                       -->
+    <button onclick="drawTriangle()">Построить треугольник</button><br><br>
     <script src="script.js"></script>
 </body>
 </html>
