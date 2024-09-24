@@ -47,14 +47,31 @@ function drawLine(context, x1, y1, x2, y2) {
     context.stroke();
 }
 
+function hexToRGBA(hex, alpha = 255) {
+    hex = hex.replace(/^#/, '');
+
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    const r = parseInt(hex.slice(0, 2), 16) || 0; 
+    const g = parseInt(hex.slice(2, 4), 16) || 0; 
+    const b = parseInt(hex.slice(4, 6), 16) || 0; 
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function floodFillScanline(x, y, newColor) {
     context.filter = 'none';
     const oldColor = getPixelColor(x, y);
-    if (oldColor === newColor) return;
+
+    if (oldColor === hexToRGBA(newColor)) { 
+        return;     
+    }
     
     let x1;
     let spanAbove, spanBelow;
-    const stack = []; 
+    let stack = []; 
     stack.push({ x, y }); // Добавляем начальную точку в стек
     
     while (stack.length > 0) {
@@ -90,6 +107,7 @@ function floodFillScanline(x, y, newColor) {
             x1++;
         }
     }
+    stack = []; 
 }
 
 function drawPixel(x, y, color) {
