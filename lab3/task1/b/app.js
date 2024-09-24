@@ -12,8 +12,10 @@ const imgCtx = imgCanvas.getContext('2d');
 
 const img = new Image();
 img.src = 'ФРУКТЫ.jpg';
-imgCanvas.width = img.width;
-imgCanvas.height = img.height;
+const imgWidth = img.width;
+const imgHeight = img.height;
+imgCanvas.width = imgWidth;
+imgCanvas.height = imgHeight;
 
 img.onload = function() {
     imgCtx.drawImage(img, 0, 0);
@@ -91,8 +93,11 @@ function floodFillScanline(x, y, newColor) {
         
         // Заливаем пиксели вправо
         while (x1 < canvas.width && getPixelColor(x1, currY) === oldColor) {
-            //drawPixel(x1, currY, newColor);
-            copyPixel((x + x1) % img.width, (y + currY) % img.height, x1, currY);
+            
+            const sourceX = (x1 - x + imgWidth) % imgWidth; 
+            const sourceY = (currY - y + imgHeight) % imgHeight;
+
+            copyPixel(sourceX, sourceY, x1, currY);
         
             // Проверяем верхнюю строку
             if (!spanAbove && currY > 0 && getPixelColor(x1, currY - 1) === oldColor) {
