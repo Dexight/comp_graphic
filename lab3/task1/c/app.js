@@ -150,7 +150,7 @@ function drawBoundary(color) {
 
 // Функция для рисования линии
 function drawLine(context, x1, y1, x2, y2) {
-    context.filter = 'url(#remove-alpha)';
+    //context.filter = 'url(#remove-alpha)'; //с ним работает красивее, но дольше
     context.beginPath();
     context.strokeStyle = document.getElementById('selColor').value;
     context.lineWidth = document.getElementById('selWidth').value;
