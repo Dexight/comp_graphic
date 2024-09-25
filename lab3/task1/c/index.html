@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рисование на Canvas</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif; 
+        }
+        canvas {
+            border: 1px solid black;
+            margin-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .controls input, .controls button {
+            margin: 0 15px; 
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <label for="selColor">Цвет рисования:</label>
+        <input type="color" id="selColor" value="#000000">
+        
+        <label for="selBoundaryColor">Цвет границы:</label>
+        <input type="color" id="selBoundaryColor" value="#ff0000">
+        
+        <label for="selWidth">Ширина линии:</label>
+        <input type="number" id="selWidth" value="5" min="1" max="50">
+        
+        <button onclick="clearArea()">Очистить</button>
+    </div>
+    
+    <svg width="0" height="0" style="position:absolute;z-index:-1;"></svg>
+        <defs>
+          <filter id="remove-alpha" x="0" y="0" width="100%" height="100%">
+            <feComponentTransfer>
+              <feFuncA type="discrete" tableValues="0 1"></feFuncA>
+            </feComponentTransfer>
+          </filter>
+        </defs>
+    </svg>
+    <script src="app.js"></script>
+</body>
+</html>
