@@ -9,15 +9,15 @@ const context = canvas.getContext('2d');
 const imgCanvas = document.getElementById('imgCanvas');
 const imgCtx = imgCanvas.getContext('2d');
 
-
+let imgWidth, imgHeight;
 const img = new Image();
 img.src = 'ФРУКТЫ.jpg';
-const imgWidth = img.width;
-const imgHeight = img.height;
-imgCanvas.width = imgWidth;
-imgCanvas.height = imgHeight;
 
 img.onload = function() {
+    imgWidth = img.width;
+    imgHeight = img.height;
+    imgCanvas.width = imgWidth;
+    imgCanvas.height = imgHeight;
     imgCtx.drawImage(img, 0, 0);
 };
 
