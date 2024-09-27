@@ -3,6 +3,7 @@ let ctx = canvas.getContext('2d');
 let points = new Set();
 let polygons = [];
 let dotRadius = 3;
+let polygonSelect = document.getElementById('polygon-select');
 
 canvas.addEventListener('click', (e) => {
     let x = e.offsetX;
@@ -16,7 +17,6 @@ canvas.addEventListener('click', (e) => {
         ctx.fillStyle = 'red';
         ctx.fill();
     }
-    console.log("points size = " + points.size);
 });
 
 document.getElementById('build-polygon').addEventListener('click', buildPolygon);
@@ -30,7 +30,12 @@ function buildPolygon() {
     polygons.push(polygonPoints);
     drawPolygon(polygonPoints);
 
-    // Перекрашиваем точки полигона в черный
+    // Добавляем новый полигон в выпадающий список
+    let option = document.createElement('option');
+    option.text = `Полигон ${polygons.length}`;
+    option.value = polygons.length - 1;
+    polygonSelect.add(option);
+
     polygonPoints.forEach(point => {
         ctx.beginPath();
         ctx.arc(point.x, point.y, dotRadius, 0, 2 * Math.PI);
@@ -57,6 +62,7 @@ document.getElementById('clear-scene').addEventListener('click', clearScene);
 function clearScene() {
     points.clear();
     polygons = [];
+    polygonSelect.innerHTML = '<option value="" disabled selected>Полигоны</option>';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -64,13 +70,11 @@ canvas.addEventListener('contextmenu', (event) => {
     const x = event.offsetX;
     const y = event.offsetY;
 
-    // Ищем точку в Set
     for (let point of points) {
         if (Math.sqrt(Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2)) < dotRadius) {
             points.delete(point); // Удаляем точку из Set
 
             ctx.clearRect(point.x - dotRadius, point.y - dotRadius, 2 * dotRadius, 2 * dotRadius); // Очистка квадратом
-
             break;
         }
     }

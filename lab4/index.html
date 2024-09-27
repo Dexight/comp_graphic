@@ -18,6 +18,9 @@
       #buttons button {
         margin: 0 10px;
       }
+      #polygons-list {
+        margin-top: 10px;
+      }
     </style>
   </head>
   <body>
@@ -26,6 +29,13 @@
       <button id="build-polygon">Построить полигон</button>
       <button id="clear-scene">Очистить сцену</button>
     </div>
+    
+    <div id="polygons-list">
+      <select id="polygon-select">
+        <option value="" disabled selected>Выберите полигон</option>
+      </select>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>
