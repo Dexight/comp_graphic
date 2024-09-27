@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Построение полигонов</title>
+    <style>
+      body {
+        text-align: center;
+      }
+      canvas {
+        border: 1px solid black;
+        display: inline-block;
+      }
+      #buttons {
+        text-align: center;
+        margin-top: 20px;
+      }
+      #buttons button {
+        margin: 0 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="800" height="400"></canvas>
+    <div id="buttons">
+      <button id="build-polygon">Построить полигон</button>
+      <button id="clear-scene">Очистить сцену</button>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
