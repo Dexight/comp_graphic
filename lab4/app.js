@@ -4,6 +4,7 @@ let points = new Set();
 let polygons = [];
 let dotRadius = 3;
 let polygonSelect = document.getElementById('polygon-select');
+let selectedPolygonIndex = null;
 
 canvas.addEventListener('click', (e) => {
     let x = e.offsetX;
@@ -28,7 +29,7 @@ function buildPolygon() {
     }
     let polygonPoints = [...points];
     polygons.push(polygonPoints);
-    drawPolygon(polygonPoints);
+    drawPolygon(polygonPoints, 'black', 'black');
 
     // Добавляем новый полигон в выпадающий список
     let option = document.createElement('option');
@@ -36,25 +37,26 @@ function buildPolygon() {
     option.value = polygons.length - 1;
     polygonSelect.add(option);
 
-    polygonPoints.forEach(point => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, dotRadius, 0, 2 * Math.PI);
-        ctx.fillStyle = 'black';
-        ctx.fill();
-    });
-
     points.clear();
 }
 
-function drawPolygon(polygon) {
+function drawPolygon(polygon, lineColor, pointColor) {
     ctx.beginPath();
     ctx.moveTo(polygon[0].x, polygon[0].y);
     for (let i = 1; i < polygon.length; i++) {
         ctx.lineTo(polygon[i].x, polygon[i].y);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = lineColor;
     ctx.stroke();
+
+    // Рисуем точки
+    polygon.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = pointColor;
+        ctx.fill();
+    });
 }
 
 document.getElementById('clear-scene').addEventListener('click', clearScene);
@@ -62,8 +64,9 @@ document.getElementById('clear-scene').addEventListener('click', clearScene);
 function clearScene() {
     points.clear();
     polygons = [];
-    polygonSelect.innerHTML = '<option value="" disabled selected>Полигоны</option>';
+    polygonSelect.innerHTML = '<option value="" disabled selected>Выберите полигон</option>';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    selectedPolygonIndex = null;
 }
 
 canvas.addEventListener('contextmenu', (event) => {
@@ -80,4 +83,19 @@ canvas.addEventListener('contextmenu', (event) => {
     }
 
     event.preventDefault();
+});
+
+// Обработчик выбора полигона из выпадающего списка
+polygonSelect.addEventListener('change', (e) => {
+    let selectedIndex = parseInt(e.target.value);
+
+    // Очищаем сцену и рисуем все полигоны снова
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    polygons.forEach((polygon, index) => {
+        let lineColor = (index === selectedIndex) ? 'blue' : 'black';
+        let pointColor = (index === selectedIndex) ? 'blue' : 'black';
+        drawPolygon(polygon, lineColor, pointColor);
+    });
+
+    selectedPolygonIndex = selectedIndex;
 });
