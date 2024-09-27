@@ -99,3 +99,31 @@ polygonSelect.addEventListener('change', (e) => {
 
     selectedPolygonIndex = selectedIndex;
 });
+
+document.getElementById('delete-polygon').addEventListener('click', deletePolygon);
+
+function deletePolygon() {
+    if (selectedPolygonIndex === null || selectedPolygonIndex === undefined) {
+        alert('Выберите полигон для удаления');
+        return;
+    }
+
+    // Удаляем выбранный полигон
+    polygons.splice(selectedPolygonIndex, 1);
+
+    // Обновляем выпадающий список
+    polygonSelect.innerHTML = '<option value="" disabled selected>Выберите полигон</option>';
+    polygons.forEach((_, index) => {
+        let option = document.createElement('option');
+        option.text = `Полигон ${index + 1}`;
+        option.value = index;
+        polygonSelect.add(option);
+    });
+
+    // Очищаем сцену и перерисовываем оставшиеся полигоны
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+
+    // Сбрасываем выбранный полигон
+    selectedPolygonIndex = null;
+}

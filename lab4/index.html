@@ -13,29 +13,42 @@
       }
       #buttons {
         text-align: center;
-        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
       }
       #buttons button {
-        margin: 0 10px;
+        margin-right: 10px;
       }
       #polygons-list {
-        margin-top: 10px;
+        margin-right: 10px;
+      }
+      .content{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+      }
+      #delete-polygon{
+        margin-top: 5px;
       }
     </style>
   </head>
-  <body>
     <canvas id="canvas" width="800" height="400"></canvas>
+
+  <div class = "content">    
     <div id="buttons">
       <button id="build-polygon">Построить полигон</button>
-      <button id="clear-scene">Очистить сцену</button>
+      <button id="delete-polygon">Удалить полигон</button>
     </div>
-    
+
     <div id="polygons-list">
       <select id="polygon-select">
         <option value="" disabled selected>Выберите полигон</option>
       </select>
     </div>
-
+    
+    <button id="clear-scene">Очистить сцену</button>
+  </div>
     <script src="app.js"></script>
   </body>
 </html>
