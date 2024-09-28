@@ -127,3 +127,18 @@ function deletePolygon() {
     // Сбрасываем выбранный полигон
     selectedPolygonIndex = null;
 }
+
+// произведение матрицы и точки
+function multMatrixAndPoint(matrix, point){
+    let x = point.x;
+    let y = point.y;
+    let resultX = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2];
+    let resultY = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2];
+    return { x: resultX, y: resultY };
+}
+
+
+function applyTransform(polygon, transformMatrix){
+    return polygon.map(point => multMatrixAndPoint(transformMatrix, point));
+}
+
