@@ -185,7 +185,7 @@ document.getElementById('translate-polygon').addEventListener('click', () => {
     translatePoly(dx, dy);
 });
 
-function RotatePoly(angle, x, y){
+function rotatePoly(angle, x, y){
     if(selectedPolygonIndex !== null){
         let rad = (Math.PI / 180) * angle;
         let matrix = getRotationMatrix(rad, x, y);
@@ -200,6 +200,51 @@ document.getElementById('rotate-polygon').addEventListener('click', () => {
     let angle = parseFloat(document.getElementById('angle').value);
     let cx = parseFloat(document.getElementById('cx').value);
     let cy = parseFloat(document.getElementById('cy').value);
-    RotatePoly(angle, cx, cy);
+    rotatePoly(angle, cx, cy);
 });
 
+
+function scalePoly(sx, sy, cx, cy){
+    if(selectedPolygonIndex !== null){
+        let matrix = getScalingMatrix(sx, sy, cx, cy);
+        let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
+        polygons[selectedPolygonIndex] = transPolygon;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+    }
+}
+
+document.getElementById('scale-polygon').addEventListener('click', () => {
+    let sx = parseFloat(document.getElementById('sx').value);
+    let sy = parseFloat(document.getElementById('sy').value);
+    let cx = parseFloat(document.getElementById('cx').value);
+    let cy = parseFloat(document.getElementById('cy').value);
+    scalePoly(sx, sy, cx, cy);
+});
+
+function getPolyCenter(polygon){
+    let sumX = 0, sumY = 0;
+    polygon.forEach(point => {sumX += point.x; sumY+=point.y;});
+    return  [Math.round(sumX / polygon.length), Math.round(sumY / polygon.length)]; 
+}
+
+document.getElementById('rotate-polygon-center').addEventListener('click', () => {
+    if(selectedPolygonIndex !== null){
+        let angle = parseFloat(document.getElementById('angle').value);
+        let [cx,cy] = getPolyCenter(polygons[selectedPolygonIndex]);
+        console.log(polygons[selectedPolygonIndex]);
+        console.log(cx, cy);
+        rotatePoly(angle, cx, cy);
+    }
+    
+});
+
+document.getElementById('scale-polygon-center').addEventListener('click', () => {
+    if(selectedPolygonIndex !== null){
+        let sx = parseFloat(document.getElementById('sx').value);
+        let sy = parseFloat(document.getElementById('sy').value);
+        let [cx, cy] = getPolyCenter(polygons[selectedPolygonIndex]);
+        console.log(cx, cy);
+        scalePoly(sx, sy, cx, cy);
+    }
+});
