@@ -184,3 +184,22 @@ document.getElementById('translate-polygon').addEventListener('click', () => {
     let dy = parseFloat(document.getElementById('dy').value);
     translatePoly(dx, dy);
 });
+
+function RotatePoly(angle, x, y){
+    if(selectedPolygonIndex !== null){
+        let rad = (Math.PI / 180) * angle;
+        let matrix = getRotationMatrix(rad, x, y);
+        let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix)
+        polygons[selectedPolygonIndex] = transPolygon;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+    }
+}
+
+document.getElementById('rotate-polygon').addEventListener('click', () => {
+    let angle = parseFloat(document.getElementById('angle').value);
+    let cx = parseFloat(document.getElementById('cx').value);
+    let cy = parseFloat(document.getElementById('cy').value);
+    RotatePoly(angle, cx, cy);
+});
+
