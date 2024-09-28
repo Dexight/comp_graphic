@@ -160,3 +160,11 @@ function getRotationMatrix(phi, x, y){
         [0, 0, 1]
     ]
 }
+
+function getScalingMatrix(sx, sy, cx, cy) {
+    return [
+        [sx, 0, cx * (1 - sx)],
+        [0, sy, cy * (1 - sy)],
+        [0, 0, 1]
+    ];
+}
