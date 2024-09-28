@@ -142,3 +142,21 @@ function applyTransform(polygon, transformMatrix){
     return polygon.map(point => multMatrixAndPoint(transformMatrix, point));
 }
 
+// матрица смещения
+function getTranslationMatrix(dx, dy) {
+    return [
+        [1, 0, dx],
+        [0, 1, dy],
+        [0, 0, 1]
+    ];
+}
+
+function getRotationMatrix(phi, x, y){
+    let cosPhi = Math.cos(phi);
+    let sinPhi = Math.sin(phi);
+    return [
+        [cosPhi, -sinPhi, x*(1-cosPhi)+y*sinPhi],
+        [sinPhi, cosPhi, y*(1-cosPhi)-x*sinPhi],
+        [0, 0, 1]
+    ]
+}
