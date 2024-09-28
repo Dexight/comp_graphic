@@ -1,5 +1,7 @@
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
+ctx.canvas.width  = window.innerWidth*0.95;
+ctx.canvas.height = window.innerHeight*0.9;
 let points = new Set();
 let polygons = [];
 let dotRadius = 3;
@@ -170,12 +172,21 @@ function getScalingMatrix(sx, sy, cx, cy) {
 }
 
 function translatePoly(dx, dy){
-    if(selectedPolygonIndex !==null){
+    if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let matrix = getTranslationMatrix(dx, dy);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
         polygons[selectedPolygonIndex] = transPolygon;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+        polygons.forEach((polygon, index) => {
+            let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            drawPolygon(polygon, lineColor, pointColor);
+        });
+    }
+    else
+    {
+        alert('Выберите полигон для смещения');
+        return;
     }
 }
 
@@ -186,13 +197,22 @@ document.getElementById('translate-polygon').addEventListener('click', () => {
 });
 
 function rotatePoly(angle, x, y){
-    if(selectedPolygonIndex !== null){
+    if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let rad = (Math.PI / 180) * angle;
         let matrix = getRotationMatrix(rad, x, y);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix)
         polygons[selectedPolygonIndex] = transPolygon;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+        polygons.forEach((polygon, index) => {
+            let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            drawPolygon(polygon, lineColor, pointColor);
+        });
+    }
+    else
+    {
+        alert('Выберите полигон для поворота');
+        return;
     }
 }
 
@@ -205,20 +225,29 @@ document.getElementById('rotate-polygon').addEventListener('click', () => {
 
 
 function scalePoly(sx, sy, cx, cy){
-    if(selectedPolygonIndex !== null){
+    if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let matrix = getScalingMatrix(sx, sy, cx, cy);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
         polygons[selectedPolygonIndex] = transPolygon;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+        polygons.forEach((polygon, index) => {
+            let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            drawPolygon(polygon, lineColor, pointColor);
+        });
+    }
+    else
+    {
+        alert('Выберите полигон для масштабирования');
+        return;
     }
 }
 
 document.getElementById('scale-polygon').addEventListener('click', () => {
     let sx = parseFloat(document.getElementById('sx').value);
     let sy = parseFloat(document.getElementById('sy').value);
-    let cx = parseFloat(document.getElementById('cx').value);
-    let cy = parseFloat(document.getElementById('cy').value);
+    let cx = parseFloat(document.getElementById('cx2').value);
+    let cy = parseFloat(document.getElementById('cy2').value);
     scalePoly(sx, sy, cx, cy);
 });
 
@@ -229,22 +258,31 @@ function getPolyCenter(polygon){
 }
 
 document.getElementById('rotate-polygon-center').addEventListener('click', () => {
-    if(selectedPolygonIndex !== null){
-        let angle = parseFloat(document.getElementById('angle').value);
+    if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
+        let angle = parseFloat(document.getElementById('angle-center').value);
         let [cx,cy] = getPolyCenter(polygons[selectedPolygonIndex]);
         console.log(polygons[selectedPolygonIndex]);
         console.log(cx, cy);
         rotatePoly(angle, cx, cy);
     }
-    
+    else
+    {
+        alert('Выберите полигон для поворота');
+        return;
+    }
 });
 
 document.getElementById('scale-polygon-center').addEventListener('click', () => {
-    if(selectedPolygonIndex !== null){
-        let sx = parseFloat(document.getElementById('sx').value);
-        let sy = parseFloat(document.getElementById('sy').value);
+    if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
+        let sx = parseFloat(document.getElementById('sx2').value);
+        let sy = parseFloat(document.getElementById('sy2').value);
         let [cx, cy] = getPolyCenter(polygons[selectedPolygonIndex]);
         console.log(cx, cy);
         scalePoly(sx, sy, cx, cy);
+    }
+    else
+    {
+        alert('Выберите полигон для масштабирования');
+        return;
     }
 });

@@ -4,19 +4,28 @@
     <meta charset="UTF-8">
     <title>Построение полигонов</title>
     <style>
-      body {
-        text-align: center;
+      html, body{
+        width:  100%;
+        height: 100%;
+        margin: 0px;
+        background-color: rgb(48, 48, 48);
+      }
+      .canvas{
+        display: flex;
+        justify-content: center;
+        margin: 8px 0;
       }
       canvas {
         border: 1px solid black;
         display: inline-block;
+        background-color: white;
       }
-      #buttons {
+      #buttons1 {
         text-align: center;
         display: flex;
         flex-direction: column;
       }
-      #buttons button {
+      #buttons1 button {
         margin-right: 10px;
       }
       #polygons-list {
@@ -28,41 +37,117 @@
         justify-content: center;
         align-items: center;
       }
+      .align-right{
+        align-items: flex-end;
+      }
+      .align-left{
+        align-items: flex-start;
+      }
       #delete-polygon{
+        margin-top: 5px;
+      }
+      #buttons2 {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: white;
+        margin: 8px 30vh;
+        border-radius: 10px;
+        padding: 10px 0;
+      }
+      #buttons2 button {
+        margin-right: 10px;
+      }
+      .row{
+        display: flex; 
+        flex-direction: row;
+        margin-top: 20px;
+      }
+      .column{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .column button{
+        margin-top: 5px;
+      }
+      .column label{
         margin-top: 5px;
       }
     </style>
   </head>
-    <canvas id="canvas" width="800" height="400"></canvas>
-
-  <div class = "content">    
-    <div id="buttons">
-      <button id="build-polygon">Построить полигон</button>
-      <button id="delete-polygon">Удалить полигон</button>
-      <button id="translate-polygon">Смещение</button>
-      <button id="rotate-polygon">Поворот</button>
-      <button id="rotate-polygon-center">Поворот относительно центра полигона</button>
-      <button id="scale-polygon">Масштабирование</button>
-      <button id="scale-polygon-center">Масштабирование относительно центра полигона</button>
-
-      <label>dx: <input id="dx" type="number" value="0"></label>
-      <label>dy: <input id="dy" type="number" value="0"></label>
-      <label>Угол (в градусах): <input id="angle" type="number" value="0"></label>
-      <label>sx: <input id="sx" type="number" value="1"></label>
-      <label>sy: <input id="sy" type="number" value="1"></label>
-      <label>Центр X: <input id="cx" type="number" value="0"></label>
-      <label>Центр Y: <input id="cy" type="number" value="0"></label>
-
+  <body>
+    <div class="canvas">
+      <canvas id="canvas"></canvas>
     </div>
+    <div class = "content">    
+      <div id="buttons1">
+        <button id="build-polygon">Построить полигон</button>
+        <button id="delete-polygon">Удалить полигон</button>
+      </div>
 
-    <div id="polygons-list">
-      <select id="polygon-select">
-        <option value="" disabled selected>Выберите полигон</option>
-      </select>
+      <div id="polygons-list">
+        <select id="polygon-select">
+          <option value="" disabled selected>Выберите полигон</option>
+        </select>
+      </div>
+      
+      <button id="clear-scene">Очистить сцену</button>
     </div>
-    
-    <button id="clear-scene">Очистить сцену</button>
-  </div>
+    <div id="buttons2">
+
+      <div class="row" style="margin: 0;">
+        <div class="column align-left">
+          <button id="translate-polygon">Смещение</button>
+        </div>
+        <div class="column align-right">
+          <label>По X: <input id="dx" type="number" value="0"></label>
+          <label>По Y: <input id="dy" type="number" value="0"></label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="column align-left">
+          <button id="rotate-polygon">Поворот</button>
+        </div>
+        <div class="column align-right">
+          <label>Точка поворота X: <input id="cx" type="number" value="0"></label>
+          <label>Точка поворота Y: <input id="cy" type="number" value="0"></label>
+          <label>Угол (в градусах): <input id="angle" type="number" value="0"></label>
+        </div>  
+      </div>
+
+      <div class="row">
+        <div class="column align-left">
+          <button id="rotate-polygon-center">Поворот относительно <br> центра полигона</button>
+        </div>
+        <div class="column align-right">
+          <label>Угол (в градусах): <input id="angle-center" type="number" value="0"></label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="column align-left">
+          <button id="scale-polygon">Масштабирование</button>
+        </div>
+        <div class="column align-right">
+          <label>Точка масштабирования X: <input id="cx2" type="number" value="0"></label>
+          <label>Точка масштабирования Y: <input id="cy2" type="number" value="0"></label>
+          <label>Коэффициент масштабирования X: <input id="sx" type="number" value="1"></label>
+          <label>Коэффициент масштабирования Y: <input id="sy" type="number" value="1"></label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="column align-left">
+          <button id="scale-polygon-center">Масштабирование относительно<br>центра полигона</button>
+        </div>
+        <div class="column align-right">
+          <label>Коэффициент масштабирования X: <input id="sx2" type="number" value="1"></label>
+          <label>Коэффициент масштабирования Y: <input id="sy2" type="number" value="1"></label>
+        </div>
+      </div>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>
