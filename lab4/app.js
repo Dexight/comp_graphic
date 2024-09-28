@@ -168,3 +168,19 @@ function getScalingMatrix(sx, sy, cx, cy) {
         [0, 0, 1]
     ];
 }
+
+function translatePoly(dx, dy){
+    if(selectedPolygonIndex !==null){
+        let matrix = getTranslationMatrix(dx, dy);
+        let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
+        polygons[selectedPolygonIndex] = transPolygon;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
+    }
+}
+
+document.getElementById('translate-polygon').addEventListener('click', () => {
+    let dx = parseFloat(document.getElementById('dx').value);
+    let dy = parseFloat(document.getElementById('dy').value);
+    translatePoly(dx, dy);
+});
