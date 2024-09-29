@@ -10,6 +10,9 @@ let selectedPolygonIndex = null;
 let edges = [];
 let edgeSelect = document.getElementById('edge-select');
 let selectedEdgeIndex = null;
+const checkboxLabel = document.getElementById('vector-label');
+const edgeButtons = document.getElementById('edge-buttons');
+let vector = 0;
 
 document.getElementById('cx').addEventListener('input', drawRotationPoint);
 document.getElementById('cy').addEventListener('input', drawRotationPoint);
@@ -114,9 +117,27 @@ function buildPolygon() {
 }
 
 function drawPolygon(polygon, lineColor, pointColor, highlightEdge = false, highlightEdgeIndex = null) {
-    for (let i = 0; i < polygon.length; i++) {
-        let start = polygon[i];
-        let end = polygon[(i + 1) % polygon.length];
+    if (polygon.length !== 2){
+        for (let i = 0; i < polygon.length; i++) {
+            let start = polygon[i];
+            let end = polygon[(i + 1) % polygon.length];
+
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+
+            let edgeStrokeStyle = lineColor;
+
+            if (highlightEdge && selectedEdgeIndex !== null && i === highlightEdgeIndex)
+                edgeStrokeStyle = 'orange';
+
+            ctx.strokeStyle = edgeStrokeStyle;
+            ctx.stroke();
+        }
+    }
+    else{
+        let start = polygon[0]
+        let end = polygon[1];
 
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
@@ -124,14 +145,12 @@ function drawPolygon(polygon, lineColor, pointColor, highlightEdge = false, high
 
         let edgeStrokeStyle = lineColor;
 
-        if (highlightEdge && selectedEdgeIndex !== null && i === highlightEdgeIndex) {
+        if (highlightEdge && selectedEdgeIndex !== null && highlightEdgeIndex !== null)
             edgeStrokeStyle = 'orange';
-        }
 
         ctx.strokeStyle = edgeStrokeStyle;
         ctx.stroke();
     }
-
     // Рисуем точки
     polygon.forEach(point => {
         ctx.beginPath();
@@ -151,6 +170,7 @@ function clearScene() {
     edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     selectedPolygonIndex = null;
+    edgeButtons.style.display = 'none';
 }
 
 canvas.addEventListener('contextmenu', (event) => {
@@ -178,12 +198,24 @@ polygonSelect.addEventListener('change', (e) => {
     edges = [];
     selectedEdgeIndex = null;
     edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+    edgeButtons.style.display = 'none';
     
     polygons.forEach((polygon, index) => {
         let lineColor = (index === selectedIndex) ? 'blue' : 'black';
         let pointColor = (index === selectedIndex) ? 'blue' : 'black';
         drawPolygon(polygon, lineColor, pointColor);
-        if (index === selectedIndex && polygon.length > 1)
+        
+        if (index === selectedIndex && polygon.length === 2)
+        {
+                edges.push([polygon[0].x, polygon[0].y, polygon[1].x, polygon[1].y]);
+                // Добавляем новую грань в выпадающий список
+                let option = document.createElement('option');
+                option.text = `Грань ${edges.length}`;
+                option.value = edges.length - 1;
+                edgeSelect.add(option);
+        }
+
+        if (index === selectedIndex && polygon.length > 2)
         {
             for (let i = 0; i < polygon.length; i++) {
                 let nextIndex = (i === polygon.length - 1) ? 0 : i + 1;
@@ -194,7 +226,6 @@ polygonSelect.addEventListener('change', (e) => {
                 option.value = edges.length - 1;
                 edgeSelect.add(option);
             }
-            console.log(edges);
         }
     });
     drawRotationPoint(false);
@@ -216,6 +247,8 @@ function deletePolygon() {
     // Обновляем выпадающий список
     polygonSelect.innerHTML = '<option value="" disabled selected>Выберите полигон</option>';
     edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+    edgeButtons.style.display = 'none';
+
     polygons.forEach((_, index) => {
         let option = document.createElement('option');
         option.text = `Полигон ${index + 1}`;
@@ -391,7 +424,6 @@ document.getElementById('scale-polygon-center').addEventListener('click', () => 
 
 edgeSelect.addEventListener('change', (e) => {
     selectedEdgeIndex = parseInt(e.target.value);
-
     // Очищаем сцену и перерисовываем полигоны
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -402,4 +434,71 @@ edgeSelect.addEventListener('change', (e) => {
         drawPolygon(polygon, lineColor, pointColor, highlightEdge, selectedEdgeIndex);
     });
 
+    edgeButtons.style.display = 'flex';
+});
+
+//ПЕРЕСЕЧЕНИЕ ПРЯМЫХ
+document.getElementById('find-intersections').addEventListener('click', findIntersections);
+
+function findIntersections() {
+    const intersections = [];
+
+    const selectedEdge = edges[selectedEdgeIndex];
+    const edgeStart = { x: selectedEdge[0], y: selectedEdge[1] };
+    const edgeEnd = { x: selectedEdge[2], y: selectedEdge[3] };
+
+    // Проходим по всем полигонам и их граням
+    polygons.forEach(polygon => {
+        const polygonEdges = [];
+
+        for (let i = 0; i < polygon.length; i++) {
+            const start = polygon[i];
+            const end = polygon[(i + 1) % polygon.length];
+            polygonEdges.push([start, end]);
+        }
+
+        polygonEdges.forEach(edge => {
+            const intersection = linesIntersect(edge[0], edge[1], edgeStart, edgeEnd);
+            if (intersection) {
+                intersections.push(intersection);
+            }
+        });
+    });
+
+    // Отображаем точки пересечения на canvas
+    intersections.forEach(intersect => {
+        ctx.beginPath();
+        ctx.arc(intersect.x, intersect.y, dotRadius+2, 0, 2 * Math.PI);
+        ctx.fillStyle = 'orange';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(intersect.x, intersect.y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+    });
+}
+
+function linesIntersect(p1, p2, p3, p4) {
+    const det = (p2.x - p1.x) * (p4.y - p3.y) - (p4.x - p3.x) * (p2.y - p1.y); // детерминант на основе точек отрезка
+    if (det === 0) return null; // Линии параллельны
+    
+    const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p4.x - p3.x) * (p3.y - p1.y)) / det; //параметр 1ой прямой
+    const u = -((p2.x - p1.x) * (p3.y - p1.y) - (p3.x - p1.x) * (p2.y - p1.y)) / det; //параметр 2ой прямой (-1*... для соблюдения векторного представления)
+
+    //Логика: Если оба параметра находятся в диапазоне [0, 1], значит, отрезки пересекаются
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        const intersectX = p1.x + t * (p2.x - p1.x);
+        const intersectY = p1.y + t * (p2.y - p1.y);
+        return { x: intersectX, y: intersectY };
+    }
+
+    return null; // Нет пересечения
+}
+
+//ПОЛОЖЕНИЕ ТОЧКИ ОТНОСИТЕЛЬНО ПРЯМОЙ
+
+// Обработчик чекбокса
+document.querySelector('input[name="vector"]').addEventListener('change', (e) => {
+    vector = (e.target.checked)? 1 : 0; // Если чекбокс активирован
+    console.log(vector);
 });
