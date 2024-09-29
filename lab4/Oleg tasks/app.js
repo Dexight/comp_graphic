@@ -10,9 +10,10 @@ let selectedPolygonIndex = null;
 let edges = [];
 let edgeSelect = document.getElementById('edge-select');
 let selectedEdgeIndex = null;
-const checkboxLabel = document.getElementById('vector-label');
+const checkboxLabel = document.getElementById('direction-label');
 const edgeButtons = document.getElementById('edge-buttons');
-let vector = 0;
+let direction = 1;
+const findPositionButton = document.getElementById('find-position');
 
 document.getElementById('cx').addEventListener('input', drawRotationPoint);
 document.getElementById('cy').addEventListener('input', drawRotationPoint);
@@ -36,6 +37,16 @@ function drawRotationPoint(redraw = true, isCenter = false, cx = 0, cy = 0) {
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
         });
+
+        //красные точки оставляем на месте
+        let dots = [...points];
+        for (let i = 0; i < points.size; i++)
+        {
+            ctx.beginPath();
+            ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+        }
     }
 
     if (!isNaN(cx) && !isNaN(cy)) {
@@ -67,6 +78,16 @@ function drawScalePoint(redraw = true, isCenter = false, cx = 0, cy = 0) {
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
         });
+
+        //красные точки оставляем на месте
+        let dots = [...points];
+        for (let i = 0; i < points.size; i++)
+        {
+            ctx.beginPath();
+            ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+        }
     }
 
     if (!isNaN(cx) && !isNaN(cy)) {
@@ -94,6 +115,7 @@ canvas.addEventListener('click', (e) => {
         ctx.fillStyle = 'red';
         ctx.fill();
     }
+    findPositionButton.style.display = 'inline';
 });
 
 document.getElementById('build-polygon').addEventListener('click', buildPolygon);
@@ -112,8 +134,8 @@ function buildPolygon() {
     option.text = `Полигон ${polygons.length}`;
     option.value = polygons.length - 1;
     polygonSelect.add(option);
-
     points.clear();
+    findPositionButton.style.display = 'none';
 }
 
 function drawPolygon(polygon, lineColor, pointColor, highlightEdge = false, highlightEdgeIndex = null) {
@@ -230,6 +252,15 @@ polygonSelect.addEventListener('change', (e) => {
     });
     drawRotationPoint(false);
     drawScalePoint(false);
+    //красные точки оставляем на месте
+    let dots = [...points];
+    for (let i = 0; i < points.size; i++)
+    {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
     selectedPolygonIndex = selectedIndex;
 });
 
@@ -260,8 +291,17 @@ function deletePolygon() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     polygons.forEach(polygon => drawPolygon(polygon, 'black', 'black'));
 
-    // Сбрасываем выбранный полигон
     selectedPolygonIndex = null;
+    
+    //красные точки оставляем на месте
+    let dots = [...points];
+    for (let i = 0; i < points.size; i++)
+    {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
 }
 
 // произведение матрицы и точки
@@ -373,6 +413,7 @@ function scalePoly(sx, sy, cx, cy, isCenter = false){
             drawPolygon(polygon, lineColor, pointColor);
         });
         drawScalePoint(!isCenter, isCenter, cx, cy);
+        points.clear();
     }
     else
     {
@@ -422,6 +463,7 @@ document.getElementById('scale-polygon-center').addEventListener('click', () => 
     }
 });
 
+// Выбор грани из списка
 edgeSelect.addEventListener('change', (e) => {
     selectedEdgeIndex = parseInt(e.target.value);
     // Очищаем сцену и перерисовываем полигоны
@@ -432,9 +474,21 @@ edgeSelect.addEventListener('change', (e) => {
         let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
         let highlightEdge = (index === selectedPolygonIndex);
         drawPolygon(polygon, lineColor, pointColor, highlightEdge, selectedEdgeIndex);
-    });
-
+    });   
     edgeButtons.style.display = 'flex';
+    
+    // Красные точки оставляем на месте
+    let dots = [...points];
+    for (let i = 0; i < points.size; i++)
+    {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
+
+    // Рисуем направление вектора (треугольник-маркер)
+    drawEdgeMarker(edges[selectedEdgeIndex], 15);
 });
 
 //ПЕРЕСЕЧЕНИЕ ПРЯМЫХ
@@ -476,6 +530,16 @@ function findIntersections() {
         ctx.fillStyle = 'blue';
         ctx.fill();
     });
+
+    //красные точки оставляем на месте
+    let dots = [...points];
+    for (let i = 0; i < points.size; i++)
+    {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
 }
 
 function linesIntersect(p1, p2, p3, p4) {
@@ -498,7 +562,118 @@ function linesIntersect(p1, p2, p3, p4) {
 //ПОЛОЖЕНИЕ ТОЧКИ ОТНОСИТЕЛЬНО ПРЯМОЙ
 
 // Обработчик чекбокса
-document.querySelector('input[name="vector"]').addEventListener('change', (e) => {
-    vector = (e.target.checked)? 1 : 0; // Если чекбокс активирован
-    console.log(vector);
+document.querySelector('input[name="direction"]').addEventListener('change', (e) => {
+    direction = (e.target.checked)? -1 : 1; // Если чекбокс активирован
+    // Рисуем направление вектора (треугольник-маркер)
+    drawEdgeMarker(edges[selectedEdgeIndex], 15);
 });
+
+document.getElementById('find-position').addEventListener('click', findPosition);
+function findPosition() {
+    const selectedEdge = edges[selectedEdgeIndex];
+    let edgeStart = { x: selectedEdge[0], y: selectedEdge[1] };
+    let edgeEnd = { x: selectedEdge[2], y: selectedEdge[3] };
+
+    let dots = [...points];
+    let pointX = dots[dots.length - 1].x;
+    let pointY = dots[dots.length - 1].y;
+
+    // Вычисляем векторное произведение = (x2−x1)*(py−y1)−(y2−y1)*(px−x1)
+    let vectorProduct = (edgeEnd.x - edgeStart.x) * (pointY - edgeStart.y) - (edgeEnd.y - edgeStart.y) * (pointX - edgeStart.x);
+    vectorProduct *= direction;
+    if (vectorProduct > 0) {
+        console.log("left");
+    } else if (vectorProduct < 0) {
+        console.log("right");
+    } else {
+        console.log("on the line");
+    }
+
+    // Красные точки оставляем на месте
+    for (let i = 0; i < points.size - 1; i++) {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
+
+    // Последнюю точку выделяем
+    ctx.beginPath();
+    ctx.arc(dots[dots.length - 1].x, dots[dots.length - 1].y, dotRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = 'red';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(dots[dots.length - 1].x, dots[dots.length - 1].y, dotRadius - 1, 0, 2 * Math.PI);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+}
+
+function drawEdgeMarker(edge, size) {
+    let x1 = edge[0];
+    let y1 = edge[1];
+
+    let x2 = edge[2];
+    let y2 = edge[3];
+
+    // Очищаем сцену и перерисовываем полигоны
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    polygons.forEach((polygon, index) => {
+        let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+        let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+        let highlightEdge = (index === selectedPolygonIndex);
+        drawPolygon(polygon, lineColor, pointColor, highlightEdge, selectedEdgeIndex);
+    });
+
+    // Вычисляем вектор направления
+    if (direction === -1){
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let angle = Math.atan2(dy, dx); // Угол в радианах
+
+        // Определяем координаты вершин треугольника
+        let triangleBaseX1 = x2 - size * Math.cos(angle - Math.PI / 6);
+        let triangleBaseY1 = y2 - size * Math.sin(angle - Math.PI / 6);
+        let triangleBaseX2 = x2 - size * Math.cos(angle + Math.PI / 6);
+        let triangleBaseY2 = y2 - size * Math.sin(angle + Math.PI / 6);
+
+        ctx.beginPath();
+        ctx.moveTo(x2, y2); // Конечная точка
+        ctx.lineTo(triangleBaseX1, triangleBaseY1); // Левая точка
+        ctx.lineTo(triangleBaseX2, triangleBaseY2); // Правая точка
+        ctx.closePath();
+    }
+    else{
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        let angle = Math.atan2(dy, dx); // Угол в радианах
+
+        // Определяем координаты вершин треугольника
+        let triangleBaseX1 = x1 - size * Math.cos(angle - Math.PI / 6);
+        let triangleBaseY1 = y1 - size * Math.sin(angle - Math.PI / 6);
+        let triangleBaseX2 = x1 - size * Math.cos(angle + Math.PI / 6);
+        let triangleBaseY2 = y1 - size * Math.sin(angle + Math.PI / 6);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); // Конечная точка
+        ctx.lineTo(triangleBaseX1, triangleBaseY1); // Левая точка
+        ctx.lineTo(triangleBaseX2, triangleBaseY2); // Правая точка
+        ctx.closePath();
+    }
+    // Заливка треугольника
+    ctx.fillStyle = 'orange'; // Цвет маркера
+    ctx.fill();
+
+    // Обводка треугольника
+    ctx.strokeStyle = 'orange';
+    ctx.stroke();
+
+    // Красные точки оставляем на месте
+    let dots = [...points];
+    for (let i = 0; i < dots.length; i++) {
+        ctx.beginPath();
+        ctx.arc(dots[i].x, dots[i].y, dotRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+    }
+}
