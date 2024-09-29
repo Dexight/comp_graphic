@@ -28,9 +28,6 @@
       #buttons1 button {
         margin-right: 10px;
       }
-      #polygons-list {
-        margin-right: 10px;
-      }
       .content{
         display: flex;
         flex-direction: row;
@@ -87,12 +84,18 @@
         <button id="delete-polygon">Удалить полигон</button>
       </div>
 
-      <div id="polygons-list">
-        <select id="polygon-select">
-          <option value="" disabled selected>Выберите полигон</option>
-        </select>
+      <div class = "column" style="align-items: center; margin-right: 10px;">
+        <div id="polygons-list">
+          <select id="polygon-select">
+            <option value="" disabled selected>Выберите полигон</option>
+          </select>
+        </div>
+        <div id="edge-list">
+          <select id="edge-select">
+            <option value="" disabled selected>Выберите грань</option>
+          </select>
+        </div>
       </div>
-      
       <button id="clear-scene">Очистить сцену</button>
     </div>
     <div id="buttons2">

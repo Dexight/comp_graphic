@@ -7,6 +7,9 @@ let polygons = [];
 let dotRadius = 3;
 let polygonSelect = document.getElementById('polygon-select');
 let selectedPolygonIndex = null;
+let edges = [];
+let edgeSelect = document.getElementById('edge-select');
+let selectedEdgeIndex = null;
 
 document.getElementById('cx').addEventListener('input', drawRotationPoint);
 document.getElementById('cy').addEventListener('input', drawRotationPoint);
@@ -110,15 +113,24 @@ function buildPolygon() {
     points.clear();
 }
 
-function drawPolygon(polygon, lineColor, pointColor) {
-    ctx.beginPath();
-    ctx.moveTo(polygon[0].x, polygon[0].y);
-    for (let i = 1; i < polygon.length; i++) {
-        ctx.lineTo(polygon[i].x, polygon[i].y);
+function drawPolygon(polygon, lineColor, pointColor, highlightEdge = false, highlightEdgeIndex = null) {
+    for (let i = 0; i < polygon.length; i++) {
+        let start = polygon[i];
+        let end = polygon[(i + 1) % polygon.length];
+
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+
+        let edgeStrokeStyle = lineColor;
+
+        if (highlightEdge && selectedEdgeIndex !== null && i === highlightEdgeIndex) {
+            edgeStrokeStyle = 'orange';
+        }
+
+        ctx.strokeStyle = edgeStrokeStyle;
+        ctx.stroke();
     }
-    ctx.closePath();
-    ctx.strokeStyle = lineColor;
-    ctx.stroke();
 
     // Рисуем точки
     polygon.forEach(point => {
@@ -129,12 +141,14 @@ function drawPolygon(polygon, lineColor, pointColor) {
     });
 }
 
+
 document.getElementById('clear-scene').addEventListener('click', clearScene);
 
 function clearScene() {
     points.clear();
     polygons = [];
     polygonSelect.innerHTML = '<option value="" disabled selected>Выберите полигон</option>';
+    edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     selectedPolygonIndex = null;
 }
@@ -161,10 +175,27 @@ polygonSelect.addEventListener('change', (e) => {
 
     // Очищаем сцену и рисуем все полигоны снова
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    edges = [];
+    selectedEdgeIndex = null;
+    edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+    
     polygons.forEach((polygon, index) => {
         let lineColor = (index === selectedIndex) ? 'blue' : 'black';
         let pointColor = (index === selectedIndex) ? 'blue' : 'black';
         drawPolygon(polygon, lineColor, pointColor);
+        if (index === selectedIndex && polygon.length > 1)
+        {
+            for (let i = 0; i < polygon.length; i++) {
+                let nextIndex = (i === polygon.length - 1) ? 0 : i + 1;
+                edges.push([polygon[i].x, polygon[i].y, polygon[nextIndex].x, polygon[nextIndex].y]);
+                // Добавляем новую грань в выпадающий список
+                let option = document.createElement('option');
+                option.text = `Грань ${edges.length}`;
+                option.value = edges.length - 1;
+                edgeSelect.add(option);
+            }
+            console.log(edges);
+        }
     });
     drawRotationPoint(false);
     drawScalePoint(false);
@@ -184,6 +215,7 @@ function deletePolygon() {
 
     // Обновляем выпадающий список
     polygonSelect.innerHTML = '<option value="" disabled selected>Выберите полигон</option>';
+    edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
     polygons.forEach((_, index) => {
         let option = document.createElement('option');
         option.text = `Полигон ${index + 1}`;
@@ -334,8 +366,6 @@ document.getElementById('rotate-polygon-center').addEventListener('click', () =>
     if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let angle = parseFloat(document.getElementById('angle-center').value);
         let [cx,cy] = getPolyCenter(polygons[selectedPolygonIndex]);
-        console.log(polygons[selectedPolygonIndex]);
-        console.log(cx, cy);
         rotatePoly(angle, cx, cy, true);
     }
     else
@@ -350,7 +380,6 @@ document.getElementById('scale-polygon-center').addEventListener('click', () => 
         let sx = parseFloat(document.getElementById('sx2').value);
         let sy = parseFloat(document.getElementById('sy2').value);
         let [cx, cy] = getPolyCenter(polygons[selectedPolygonIndex]);
-        console.log(cx, cy);
         scalePoly(sx, sy, cx, cy, true);
     }
     else
@@ -358,4 +387,19 @@ document.getElementById('scale-polygon-center').addEventListener('click', () => 
         alert('Выберите полигон для масштабирования');
         return;
     }
+});
+
+edgeSelect.addEventListener('change', (e) => {
+    selectedEdgeIndex = parseInt(e.target.value);
+
+    // Очищаем сцену и перерисовываем полигоны
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    polygons.forEach((polygon, index) => {
+        let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+        let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+        let highlightEdge = (index === selectedPolygonIndex);
+        drawPolygon(polygon, lineColor, pointColor, highlightEdge, selectedEdgeIndex);
+    });
+
 });
