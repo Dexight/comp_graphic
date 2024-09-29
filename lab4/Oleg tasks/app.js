@@ -581,13 +581,6 @@ function findPosition() {
     // Вычисляем векторное произведение = (x2−x1)*(py−y1)−(y2−y1)*(px−x1)
     let vectorProduct = (edgeEnd.x - edgeStart.x) * (pointY - edgeStart.y) - (edgeEnd.y - edgeStart.y) * (pointX - edgeStart.x);
     vectorProduct *= direction;
-    if (vectorProduct > 0) {
-        console.log("left");
-    } else if (vectorProduct < 0) {
-        console.log("right");
-    } else {
-        console.log("on the line");
-    }
 
     // Красные точки оставляем на месте
     for (let i = 0; i < points.size - 1; i++) {
@@ -606,8 +599,23 @@ function findPosition() {
     ctx.arc(dots[dots.length - 1].x, dots[dots.length - 1].y, dotRadius - 1, 0, 2 * Math.PI);
     ctx.fillStyle = 'white';
     ctx.fill();
+
+    // Устанавливаем шрифт и размер
+    ctx.font = '14px Arial';
+    ctx.fillStyle = 'red';
+
+    // Добавляем текст
+    if (vectorProduct > 0) {
+        ctx.fillText('Слева', dots[dots.length - 1].x-20, dots[dots.length - 1].y+20);
+    } else if (vectorProduct < 0) {
+        ctx.fillText('Справа', dots[dots.length - 1].x-20, dots[dots.length - 1].y+20);
+    } else {
+        ctx.fillText('На отрезке', dots[dots.length - 1].x, dots[dots.length - 1].y+20);
+    }
+    
 }
 
+//направление вектора (треугольник)
 function drawEdgeMarker(edge, size) {
     let x1 = edge[0];
     let y1 = edge[1];
