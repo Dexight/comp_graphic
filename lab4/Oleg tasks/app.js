@@ -213,42 +213,23 @@ canvas.addEventListener('contextmenu', (event) => {
 
 // Обработчик выбора полигона из выпадающего списка
 polygonSelect.addEventListener('change', (e) => {
-    let selectedIndex = parseInt(e.target.value);
+    selectedPolygonIndex = parseInt(e.target.value);
 
-    // Очищаем сцену и рисуем все полигоны снова
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     edges = [];
     selectedEdgeIndex = null;
     edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
     edgeButtons.style.display = 'none';
+
+    // Очищаем сцену и рисуем все полигоны снова
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     polygons.forEach((polygon, index) => {
-        let lineColor = (index === selectedIndex) ? 'blue' : 'black';
-        let pointColor = (index === selectedIndex) ? 'blue' : 'black';
+        let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+        let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
         drawPolygon(polygon, lineColor, pointColor);
         
-        if (index === selectedIndex && polygon.length === 2)
-        {
-                edges.push([polygon[0].x, polygon[0].y, polygon[1].x, polygon[1].y]);
-                // Добавляем новую грань в выпадающий список
-                let option = document.createElement('option');
-                option.text = `Грань ${edges.length}`;
-                option.value = edges.length - 1;
-                edgeSelect.add(option);
-        }
-
-        if (index === selectedIndex && polygon.length > 2)
-        {
-            for (let i = 0; i < polygon.length; i++) {
-                let nextIndex = (i === polygon.length - 1) ? 0 : i + 1;
-                edges.push([polygon[i].x, polygon[i].y, polygon[nextIndex].x, polygon[nextIndex].y]);
-                // Добавляем новую грань в выпадающий список
-                let option = document.createElement('option');
-                option.text = `Грань ${edges.length}`;
-                option.value = edges.length - 1;
-                edgeSelect.add(option);
-            }
-        }
+        //переписываем координаты граней
+        addEdges(polygon, index);
     });
     drawRotationPoint(false);
     drawScalePoint(false);
@@ -261,8 +242,33 @@ polygonSelect.addEventListener('change', (e) => {
         ctx.fillStyle = 'red';
         ctx.fill();
     }
-    selectedPolygonIndex = selectedIndex;
 });
+
+function addEdges(polygon, index)
+{
+    if (index === selectedPolygonIndex && polygon.length === 2)
+    {
+        edges.push([polygon[0].x, polygon[0].y, polygon[1].x, polygon[1].y]);
+        // Добавляем новую грань в выпадающий список
+        let option = document.createElement('option');
+        option.text = `Грань ${edges.length}`;
+        option.value = edges.length - 1;
+        edgeSelect.add(option);
+    }
+
+    if (index === selectedPolygonIndex && polygon.length > 2)
+    {
+        for (let i = 0; i < polygon.length; i++) {
+            let nextIndex = (i === polygon.length - 1) ? 0 : i + 1;
+            edges.push([polygon[i].x, polygon[i].y, polygon[nextIndex].x, polygon[nextIndex].y]);
+            // Добавляем новую грань в выпадающий список
+            let option = document.createElement('option');
+            option.text = `Грань ${edges.length}`;
+            option.value = edges.length - 1;
+            edgeSelect.add(option);
+        }
+    }
+}
 
 document.getElementById('delete-polygon').addEventListener('click', deletePolygon);
 
@@ -350,11 +356,20 @@ function translatePoly(dx, dy){
         let matrix = getTranslationMatrix(dx, dy);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
         polygons[selectedPolygonIndex] = transPolygon;
+
+        edges = [];
+        selectedEdgeIndex = null;
+        edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+        edgeButtons.style.display = 'none';
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         polygons.forEach((polygon, index) => {
             let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
+
+            // обновляем координаты граней на новые
+            addEdges(polygon, index);
         });
         drawRotationPoint(false);
         drawScalePoint(false);
@@ -378,11 +393,20 @@ function rotatePoly(angle, x, y, isCenter = false){
         let matrix = getRotationMatrix(rad, x, y);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix)
         polygons[selectedPolygonIndex] = transPolygon;
+
+        edges = [];
+        selectedEdgeIndex = null;
+        edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+        edgeButtons.style.display = 'none';
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         polygons.forEach((polygon, index) => {
             let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
+
+            // обновляем координаты граней на новые
+            addEdges(polygon, index);
         });
         drawRotationPoint(!isCenter, isCenter, x, y);
     }
@@ -406,11 +430,20 @@ function scalePoly(sx, sy, cx, cy, isCenter = false){
         let matrix = getScalingMatrix(sx, sy, cx, cy);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
         polygons[selectedPolygonIndex] = transPolygon;
+
+        edges = [];
+        selectedEdgeIndex = null;
+        edgeSelect.innerHTML = '<option value="" disabled selected>Выберите грань</option>';
+        edgeButtons.style.display = 'none';
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         polygons.forEach((polygon, index) => {
             let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
+
+            // обновляем координаты граней на новые
+            addEdges(polygon, index);
         });
         drawScalePoint(!isCenter, isCenter, cx, cy);
         points.clear();
