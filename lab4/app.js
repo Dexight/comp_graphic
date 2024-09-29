@@ -8,6 +8,74 @@ let dotRadius = 3;
 let polygonSelect = document.getElementById('polygon-select');
 let selectedPolygonIndex = null;
 
+document.getElementById('cx').addEventListener('input', drawRotationPoint);
+document.getElementById('cy').addEventListener('input', drawRotationPoint);
+
+document.getElementById('cx2').addEventListener('input', drawScalePoint);
+document.getElementById('cy2').addEventListener('input', drawScalePoint);
+
+function drawRotationPoint(redraw = true, isCenter = false, cx = 0, cy = 0) {
+    if(!isCenter)
+    {
+        cx = parseFloat(document.getElementById('cx').value);
+        cy = parseFloat(document.getElementById('cy').value);
+    }
+
+    // Очищаем сцену и перерисовываем все полигоны (при необходимости)
+    if (redraw)
+    {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        polygons.forEach((polygon, index) => {
+            let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            drawPolygon(polygon, lineColor, pointColor);
+        });
+    }
+
+    if (!isNaN(cx) && !isNaN(cy)) {
+        // Рисуем крупную фиолетовую точку с белым центром
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4, 0, 2 * Math.PI); //радиус = 4
+        ctx.fillStyle = 'purple';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2, 0, 2 * Math.PI); //радиус = 2
+        ctx.fillStyle = 'white';
+        ctx.fill();
+    }
+}
+
+function drawScalePoint(redraw = true, isCenter = false, cx = 0, cy = 0) {
+    if(!isCenter)
+    {
+        cx = parseFloat(document.getElementById('cx2').value);
+        cy = parseFloat(document.getElementById('cy2').value);
+    }
+
+    // Очищаем сцену и перерисовываем все полигоны (при необходимости)
+    if (redraw)
+    {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        polygons.forEach((polygon, index) => {
+            let lineColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
+            drawPolygon(polygon, lineColor, pointColor);
+        });
+    }
+
+    if (!isNaN(cx) && !isNaN(cy)) {
+        // Рисуем крупную фиолетовую точку с белым центром
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4, 0, 2 * Math.PI); //радиус = 4
+        ctx.fillStyle = 'lightgreen';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2, 0, 2 * Math.PI); //радиус = 2
+        ctx.fillStyle = 'white';
+        ctx.fill();
+    }
+}
+
 canvas.addEventListener('click', (e) => {
     let x = e.offsetX;
     let y = e.offsetY;
@@ -98,7 +166,8 @@ polygonSelect.addEventListener('change', (e) => {
         let pointColor = (index === selectedIndex) ? 'blue' : 'black';
         drawPolygon(polygon, lineColor, pointColor);
     });
-
+    drawRotationPoint(false);
+    drawScalePoint(false);
     selectedPolygonIndex = selectedIndex;
 });
 
@@ -182,6 +251,8 @@ function translatePoly(dx, dy){
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
         });
+        drawRotationPoint(false);
+        drawScalePoint(false);
     }
     else
     {
@@ -196,7 +267,7 @@ document.getElementById('translate-polygon').addEventListener('click', () => {
     translatePoly(dx, dy);
 });
 
-function rotatePoly(angle, x, y){
+function rotatePoly(angle, x, y, isCenter = false){
     if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let rad = (Math.PI / 180) * angle;
         let matrix = getRotationMatrix(rad, x, y);
@@ -208,6 +279,7 @@ function rotatePoly(angle, x, y){
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
         });
+        drawRotationPoint(!isCenter, isCenter, x, y);
     }
     else
     {
@@ -224,7 +296,7 @@ document.getElementById('rotate-polygon').addEventListener('click', () => {
 });
 
 
-function scalePoly(sx, sy, cx, cy){
+function scalePoly(sx, sy, cx, cy, isCenter = false){
     if(selectedPolygonIndex !== null && selectedPolygonIndex !== undefined){
         let matrix = getScalingMatrix(sx, sy, cx, cy);
         let transPolygon = applyTransform(polygons[selectedPolygonIndex], matrix);
@@ -235,6 +307,7 @@ function scalePoly(sx, sy, cx, cy){
             let pointColor = (index === selectedPolygonIndex) ? 'blue' : 'black';
             drawPolygon(polygon, lineColor, pointColor);
         });
+        drawScalePoint(!isCenter, isCenter, cx, cy);
     }
     else
     {
@@ -263,7 +336,7 @@ document.getElementById('rotate-polygon-center').addEventListener('click', () =>
         let [cx,cy] = getPolyCenter(polygons[selectedPolygonIndex]);
         console.log(polygons[selectedPolygonIndex]);
         console.log(cx, cy);
-        rotatePoly(angle, cx, cy);
+        rotatePoly(angle, cx, cy, true);
     }
     else
     {
@@ -278,7 +351,7 @@ document.getElementById('scale-polygon-center').addEventListener('click', () => 
         let sy = parseFloat(document.getElementById('sy2').value);
         let [cx, cy] = getPolyCenter(polygons[selectedPolygonIndex]);
         console.log(cx, cy);
-        scalePoly(sx, sy, cx, cy);
+        scalePoly(sx, sy, cx, cy, true);
     }
     else
     {
