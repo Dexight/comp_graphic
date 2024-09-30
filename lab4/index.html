@@ -28,9 +28,6 @@
       #buttons1 button {
         margin-right: 10px;
       }
-      #polygons-list {
-        margin-right: 10px;
-      }
       .content{
         display: flex;
         flex-direction: row;
@@ -58,6 +55,9 @@
       }
       #buttons2 button {
         margin-right: 10px;
+      }
+      #check-button{
+        margin-bottom: 10px;
       }
       .row{
         display: flex; 
@@ -87,15 +87,29 @@
         <button id="delete-polygon">Удалить полигон</button>
       </div>
 
-      <div id="polygons-list">
-        <select id="polygon-select">
-          <option value="" disabled selected>Выберите полигон</option>
-        </select>
+      <div class = "column" style="align-items: center; margin-right: 10px;">
+        <div id="polygons-list">
+          <select id="polygon-select">
+            <option value="" disabled selected>Выберите полигон</option>
+          </select>
+        </div>
+        <div id="edge-list">
+          <select id="edge-select">
+            <option value="" disabled selected>Выберите грань</option>
+          </select>
+        </div>
       </div>
-      
+      <div class = "column" id="edge-buttons" style="display: none; margin-right: 10px;">
+        <button id="find-intersections">Найти пересечения</button>
+        <label id="direction-label" style="color: white;">
+          <input type="checkbox" name="direction" value="direction"> Направление вектора
+        </label>
+        <button id="find-position" style="display: none;">Положение точки</button>
+      </div>
       <button id="clear-scene">Очистить сцену</button>
     </div>
     <div id="buttons2">
+      <button id="check-button">Проверить принадлежность точки полигону</button>
 
       <div class="row" style="margin: 0;">
         <div class="column align-left">
