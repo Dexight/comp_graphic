@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Midpoint displacement</title>
+        <style>
+            canvas{
+                border: 1.px solid black;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Midpoint displacement - генерация горного массива</h2>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <div>
+            <label for="recursionDepth">Глубина рекурсии</label>
+            <input type="number" id="recursionDepth" value="10" min="1" max="20">
+            <label for="displacement"> Мощность: </label>
+            <input type="number" id="displacement" value="100" min="1" max="200">
+            <button id="generateBtn">Сгенерировать</button>
+        </div>
+    </body>
+    <script src="app.js"></script>
+</html>
