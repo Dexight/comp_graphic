@@ -4,7 +4,9 @@ ctx.canvas.width  = window.innerWidth*0.95;
 ctx.canvas.height = window.innerHeight*0.9;
 
 let points = new Set();
-let dotRadius = 3;
+let dotRadius = 4;
+let curveSize = 1.5;
+let editLinesSize = 0.5;
 
 let curPoints = [];
 
@@ -39,21 +41,23 @@ function Bezier()//true если точек хватает/false если не �
         plast = curPoints[0];
         for(let p of curPoints)
         {
+            // показываем вектор изгиба
+            if(i % 2 !== 0)
+            {
+                ctx.beginPath();
+                ctx.moveTo(plast[0], plast[1]);
+                ctx.lineWidth = editLinesSize;
+                ctx.lineTo(p[0], p[1]);
+                ctx.strokeStyle = 'red';
+                ctx.e
+                ctx.stroke();
+            }
             // рисуем точки
             ctx.beginPath();
             ctx.arc(p[0], p[1], dotRadius, 0, 2 * Math.PI);
             if (p === curPoints[0] || p === curPoints[curPoints.length-1]) ctx.fillStyle = 'black'
             else ctx.fillStyle = 'red';
             ctx.fill();
-
-            // показываем вектор изгиба
-            if(i % 2 !== 0)
-            {
-                ctx.moveTo(plast[0], plast[1]);
-                ctx.lineTo(p[0], p[1]);
-                ctx.strokeStyle = 'pink';
-                ctx.stroke();
-            }
             plast = p;
             i++;
         }
@@ -67,21 +71,22 @@ function Bezier()//true если точек хватает/false если не �
         plast = curPoints[0];
         for(let p of curPoints)
         {
+            // показываем вектор изгиба
+            if(i % 2 !== 0)
+            {
+                ctx.beginPath();
+                ctx.moveTo(plast[0], plast[1]);
+                ctx.lineWidth = editLinesSize;
+                ctx.lineTo(p[0], p[1]);
+                ctx.strokeStyle = 'red';
+                ctx.stroke();
+            }
             // рисуем точки
             ctx.beginPath();
             ctx.arc(p[0], p[1], dotRadius, 0, 2 * Math.PI);
             if (p === curPoints[0] || p === curPoints[curPoints.length-1]) ctx.fillStyle = 'black'
             else ctx.fillStyle = 'red';
             ctx.fill();
-
-            // показываем вектор изгиба
-            if(i % 2 !== 0)
-            {
-                ctx.moveTo(plast[0], plast[1]);
-                ctx.lineTo(p[0], p[1]);
-                ctx.strokeStyle = 'pink';
-                ctx.stroke();
-            }
             plast = p;
             i++;
         }
@@ -133,6 +138,7 @@ function drawBezier(p0, p1, p2, p3)
 
         ctx.beginPath();
         ctx.moveTo(b_last[0], b_last[1]);
+        ctx.lineWidth = curveSize;
         ctx.lineTo(b[0], b[1]);
         ctx.strokeStyle = 'black';
         ctx.stroke();
@@ -208,6 +214,7 @@ function redrawScene()
 {   
     if(Bezier() === false)
     {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         //просто рисуем оставшиеся точки
         for (let p of curPoints)
         {
