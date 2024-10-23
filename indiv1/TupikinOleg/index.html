@@ -28,6 +28,16 @@
       #buttons1 button {
         margin-right: 10px;
       }
+
+      #buttons2 {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+      }
+      #buttons2 button {
+        margin-right: 10px;
+      }
+
       .content{
         display: flex;
         flex-direction: row;
@@ -60,10 +70,15 @@
     <div class="canvas">
       <canvas id="canvas"></canvas>
     </div>
-    <div class = "content">  
+    <div class = "content">
       <div id="buttons1">
-        <button id="build-triangular">Триангуляция Делоне</button>
+        <button id="merge">Объединить выпуклые<br>многоугольники</button>
       </div>
+      
+      <div id="buttons2">
+        <button id="draw-second"> Нарисовать второй<br>полигон </button>
+      </div>
+
       <button id="clear-scene">Очистить сцену</button>
     </div>
     <script src="app.js"></script>
