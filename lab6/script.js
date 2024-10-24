@@ -1,19 +1,54 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+let figureSelect = document.getElementById('figure-select');
+let curFigure = 0;
 
+// Обработчик выбора фигуры из выпадающего списка
+figureSelect.addEventListener('change', (e) => {
+    curFigure = parseInt(e.target.value);
+    
+    draw(curFigure);
+});
+
+// центр системы координат = центр фигуры
 const cube = {
+    //вершины
     vertices: [
-        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], // Задняя часть (?)
-        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]    // Лицевая часть (?)
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], // Точки задней части
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]    // Точки лицевой части
     ],
+    //грани (по индексам точек из vertices)
     faces: [
         [0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], 
         [2, 3, 7, 6], [0, 3, 7, 4], [1, 2, 6, 5]
     ]
 };
 
+const tetrahedron = {
+    vertices: [
+        [-1, -1, -1], [-1, 1, 1], [1, -1, 1], [1, 1, -1]
+    ],
+
+    faces: [
+        [0, 1, 3], [1, 2, 3], [0, 2, 3], [0, 1, 2]
+    ]
+}
+
+
+const octahedron = {
+    vertices:[
+        [-1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 0, 0], [0, -1, 0], [0, 0, -1]
+    ],
+
+    faces:[
+        [1, 0, 2], [1, 2, 3], [1, 3, 5], [1, 5, 0], //верхняя половина
+        [4, 0, 5], [4, 0, 2], [4, 2, 3], [4, 3, 5] //нижняя половина
+    ]
+}
+
 let showVertices = true;
 let showEdges = true;
+let showCube = false;
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 
@@ -44,6 +79,11 @@ document.getElementById('showVertices').addEventListener('change', (e) => {
 
 document.getElementById('showEdges').addEventListener('change', (e) => {
     showEdges = e.target.checked;
+    draw();
+});
+
+document.getElementById('showCube').addEventListener('change', (e) => {
+    showCube = e.target.checked;
     draw();
 });
 
@@ -103,7 +143,8 @@ function project([x, y, z]) {
     ];
 }
 
-function draw() {
+function draw() 
+{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const rotationX = getRotationXMatrix(rotateX);
@@ -111,7 +152,18 @@ function draw() {
     const rotationZ = getRotationZMatrix(rotateZ);
     const scaling = getScaleMatrix(scale);
 
-    const transformedVertices = cube.vertices.map(vertex => {
+    let figure;
+    let isCube = false;
+    switch(curFigure)
+    {
+        case 0: return;
+        case 1: figure = tetrahedron; break;
+        case 2: figure = cube; isCube = true; break;
+        case 3: figure = octahedron; break;
+        default: return;
+    }
+
+    const transformedVertices = figure.vertices.map(vertex => {
         let point = [...vertex, 1];  
         point = multiplyMatrixAndPoint(rotationX, point);
         point = multiplyMatrixAndPoint(rotationY, point);
@@ -120,10 +172,11 @@ function draw() {
         return project([point[0], point[1], point[2]]);
     });
 
+    // рёбра
     if (showEdges) {
         ctx.strokeStyle = 'black';
         ctx.beginPath();
-        cube.faces.forEach(face => {
+        figure.faces.forEach(face => {
             for (let i = 0; i < face.length; i++) {
                 const [x1, y1] = transformedVertices[face[i]];
                 const [x2, y2] = transformedVertices[face[(i + 1) % face.length]];
@@ -134,6 +187,7 @@ function draw() {
         ctx.stroke();
     }
 
+    // вершины
     if (showVertices) {
         ctx.fillStyle = 'red';
         transformedVertices.forEach(([x, y]) => {
@@ -141,6 +195,31 @@ function draw() {
             ctx.arc(x, y, 5, 0, Math.PI * 2);
             ctx.fill();
         });
+    }
+
+    // отображение куба
+    if (showCube && !isCube)
+    {
+        const transformedVerticesCube = cube.vertices.map(vertex => {
+            let point = [...vertex, 1];  
+            point = multiplyMatrixAndPoint(rotationX, point);
+            point = multiplyMatrixAndPoint(rotationY, point);
+            point = multiplyMatrixAndPoint(rotationZ, point);
+            point = multiplyMatrixAndPoint(scaling, point);
+            return project([point[0], point[1], point[2]]);
+        });
+
+        ctx.strokeStyle = 'pink';
+        ctx.beginPath();
+        cube.faces.forEach(face => {
+            for (let i = 0; i < face.length; i++) {
+                const [x1, y1] = transformedVerticesCube[face[i]];
+                const [x2, y2] = transformedVerticesCube[face[(i + 1) % face.length]];
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+            }
+        });
+        ctx.stroke();
     }
 }
 

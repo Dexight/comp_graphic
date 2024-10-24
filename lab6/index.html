@@ -36,6 +36,11 @@
         .controls label {
             margin-bottom: 10px;
         }
+
+        #figure-list{
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -43,14 +48,23 @@
         <canvas id="canvas" width="600" height="600"></canvas>
     </div>
     <div class="controls">
+        <div id="figure-list">
+            <select id="figure-select">
+              <option value="0" disabled selected>Выберите фигуру</option>
+              <option value="1">Тетраэдр</option>
+              <option value="2">Куб</option>
+              <option value="3">Октаэдр</option>
+            </select>
+        </div>
+
         <label>
-            Поворот по X: <input type="range" id="rotateX" min="0" max="360" value="0">
+            Поворот по X: <input type="range" id="rotateX" min="0" max="360" step="1" value="0">
         </label>
         <label>
-            Поворот по Y: <input type="range" id="rotateY" min="0" max="360" value="0">
+            Поворот по Y: <input type="range" id="rotateY" min="0" max="360" step="1" value="0">
         </label>
         <label>
-            Поворот по Z: <input type="range" id="rotateZ" min="0" max="360" value="0">
+            Поворот по Z: <input type="range" id="rotateZ" min="0" max="360" step="1" value="0">
         </label>
         <label>
             Масштаб: <input type="range" id="scale" min="0" max="2" step="0.1" value="1">
@@ -61,6 +75,11 @@
         <label>
             <input type="checkbox" id="showEdges" checked> Грани
         </label>
+        
+        <label>
+            <input type="checkbox" id="showCube"> Отобразить куб
+        </label>
+    </div>
     </div>
     <script src="script.js"></script>
 </body>
