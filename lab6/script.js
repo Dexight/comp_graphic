@@ -46,6 +46,50 @@ const octahedron = {
     ]
 }
 
+//Икосаэдр-----
+
+//вычислим точки на окружности с центром в (0, 0, 0)
+
+radians = (-72 * Math.PI) / 180;
+
+p0 = {x:0, y:0, z:1};
+// вычисляем первые 2 точки
+p1 = {x: p0.x + Math.cos(radians), y:0, z: p0.z + Math.sin(radians)};
+p2 = {x: p1.x + Math.cos(radians), y:0, z: p1.z + Math.sin(radians)};
+// другие точки - просто зеркалим по оси X
+p3 = {x: -p2.x, y:0, z: p2.z};
+p4 = {x: -p1.x, y:0, z: p1.z};
+
+function pointDistance(p1, p2) 
+{
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dz = p2.z - p1.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+dist = pointDistance({x:0, y:0, z:0}, {x:0, y:1, z:1});//для верхней и нижней точек
+
+const icosahedron = {
+    vertices: [
+        //верхняя половина
+
+        [0, dist, 0],//верхняя точка
+        [p0.x, p0.y+1, p0.z], [p1.x, p1.y+1, p1.z], [p2.x, p2.y+1, p2.z], [p3.x, p3.y+1, p3.z], [p4.x, p4.y+1, p4.z],//пятиугольник
+        //нижняя половина
+        
+        [p0.x, p0.y-1, -p0.z], [p1.x, p1.y-1, -p1.z], [p2.x, p2.y-1, -p2.z], [p3.x, p3.y-1, -p3.z], [p4.x, p4.y-1, -p4.z],//пятиугольник (переворачиваем верхний)
+        [0, -dist, 0]//нижняя точка
+    ],
+    faces: [
+        [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 1],//верхняя шляпка
+        [1, 9, 8], [1, 8, 2], [8, 2, 7], [2, 7, 3], [7, 3, 6], [3, 6, 4], [4, 6, 10], [4, 5, 10], [5, 9, 10], [1, 5, 9],
+        [11, 9, 8], [11, 8, 7], [11, 7, 6], [11, 6, 10], [11, 10, 9]//нижняя шляпка
+    ]
+}
+
+//--------------
+
 let showVertices = true;
 let showEdges = true;
 let showCube = false;
@@ -160,6 +204,7 @@ function draw()
         case 1: figure = tetrahedron; break;
         case 2: figure = cube; isCube = true; break;
         case 3: figure = octahedron; break;
+        case 4: figure = icosahedron; break;
         default: return;
     }
 
