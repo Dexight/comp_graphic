@@ -14,8 +14,8 @@ figureSelect.addEventListener('change', (e) => {
 const cube = {
     //вершины
     vertices: [
-        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], // Точки задней части
-        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]    // Точки лицевой части
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], // Точки лицевой части
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]    // Точки задней части
     ],
     //грани (по индексам точек из vertices)
     faces: [
@@ -185,12 +185,61 @@ function project([x, y, z]) {
     const scale = 300;
     return [
         (x / (z + distance)) * scale + canvas.width / 2,
-        (y / (z + distance)) * scale + canvas.height / 2
+        (canvas.height / 2 - (y / (z + distance)) * scale) // Инвертируем Y
     ];
 }
 
-function draw() 
-{
+
+let customFigure = null; 
+
+document.getElementById('load-obj').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.obj';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const contents = e.target.result;
+                parseOBJ(contents);
+                curFigure = 0;
+                draw(); 
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+});
+
+function parseOBJ(data) {
+    const lines = data.split('\n');
+    const vertices = [];
+    const faces = [];
+
+    lines.forEach(line => {
+        const parts = line.trim().split(' ');
+        if (parts[0] === 'v') {
+            // Добавление вершины
+            const vertex = parts.slice(1, 4).map(Number);
+            vertices.push(vertex);
+        } else if (parts[0] === 'f') {
+            // Добавление грани
+            const face = parts.slice(1).map(part => {
+                const vertexIndex = parseInt(part.split('/')[0]) - 1; // Убираем индексы нормалей и текстур
+                return vertexIndex;
+            });
+            faces.push(face);
+        }
+    });
+
+    customFigure = {
+        vertices: vertices,
+        faces: faces,
+    };
+}
+
+function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const rotationX = getRotationXMatrix(rotateX);
@@ -200,9 +249,14 @@ function draw()
 
     let figure;
     let isCube = false;
-    switch(curFigure)
-    {
-        case 0: return;
+    switch(curFigure) {
+        case 0: 
+            if (customFigure) {
+                figure = customFigure; 
+            } else {
+                return; 
+            }
+            break;
         case 1: figure = tetrahedron; break;
         case 2: figure = cube; isCube = true; break;
         case 3: figure = octahedron; break;
@@ -245,8 +299,7 @@ function draw()
     }
 
     // отображение куба
-    if (showCube && !isCube)
-    {
+    if (showCube && !isCube) {
         const transformedVerticesCube = cube.vertices.map(vertex => {
             let point = [...vertex, 1];  
             point = multiplyMatrixAndPoint(rotationX, point);
