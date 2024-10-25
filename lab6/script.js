@@ -91,6 +91,76 @@ const icosahedron = {
 }
 
 //--------------
+//Додекаэдр-----
+
+function findIntersection(segment1, segment2) {
+    const [p1, p2] = segment1;
+    const [q1, q2] = segment2;
+
+    // Вектор p1p2
+    const v1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+    // Вектор q1q2
+    const v2 = [q2[0] - q1[0], q2[1] - q1[1], q2[2] - q1[2]];
+
+    // Вектор p1q1
+    const w = [q1[0] - p1[0], q1[1] - p1[1], q1[2] - p1[2]];
+
+    // Скалярное произведение
+    const crossV1V2 = [
+        v1[1] * v2[2] - v1[2] * v2[1],
+        v1[2] * v2[0] - v1[0] * v2[2],
+        v1[0] * v2[1] - v1[1] * v2[0]
+    ];
+
+    const denom = crossV1V2[0] ** 2 + crossV1V2[1] ** 2 + crossV1V2[2] ** 2;
+    const crossWv2 = [
+        w[1] * v2[2] - w[2] * v2[1],
+        w[2] * v2[0] - w[0] * v2[2],
+        w[0] * v2[1] - w[1] * v2[0]
+    ];
+
+    const t = (crossWv2[0] * crossV1V2[0] + crossWv2[1] * crossV1V2[1] + crossWv2[2] * crossV1V2[2]) / denom;
+
+    // Найдём точку пересечения на отрезке 1
+    return [
+        p1[0] + t * v1[0],
+        p1[1] + t * v1[1],
+        p1[2] + t * v1[2]
+    ];
+}
+
+let dots = [];
+
+icosahedron.faces.forEach(face => {
+    face_coordinates = [];//точки треугольника
+
+    for (let i = 0; i < 3; i++) face_coordinates.push(icosahedron.vertices[face[i]]);
+
+    ab = [face_coordinates[0], face_coordinates[1]];
+    bc = [face_coordinates[1], face_coordinates[2]];
+
+    ab_center = [(ab[0][0] + ab[1][0])/2, (ab[0][1] + ab[1][1])/2, (ab[0][2] + ab[1][2])/2];
+    bc_center = [(bc[0][0] + bc[1][0])/2, (bc[0][1] + bc[1][1])/2, (bc[0][2] + bc[1][2])/2];
+
+    c_median_ab = [face_coordinates[2], ab_center];
+    a_median_bc = [face_coordinates[0], bc_center];
+
+    dot_intersect = findIntersection(c_median_ab, a_median_bc);
+    dots.push(dot_intersect);
+});
+
+const dodecahedron = {
+    vertices: [
+        dots[0], dots[1], dots[2], dots[3], dots[4], dots[5], dots[6], dots[7], dots[8], dots[9], 
+        dots[10], dots[11], dots[12], dots[13], dots[14], dots[15], dots[16], dots[17], dots[18], dots[19]
+    ],
+
+    faces:[
+        [0, 1, 2, 3, 4], [1, 0, 6, 7, 8], [0, 6, 5, 14, 4], [4, 14, 13, 12, 3], [3, 12, 11, 10, 2], [2, 10, 9, 8, 1],//низ
+        [7, 8, 9, 17, 16], [7, 6, 5, 15, 16], [5, 14, 13, 19, 15], [13, 12, 11, 18, 19], [11, 10, 9, 17, 18], [19, 18, 17, 16, 15]//верх
+    ]
+}
+//--------------
 
 let showVertices = true;
 let showEdges = true;
@@ -264,6 +334,7 @@ function draw() {
         case 2: figure = cube; isCube = true; break;
         case 3: figure = octahedron; break;
         case 4: figure = icosahedron; break;
+        case 5: figure = dodecahedron; break;
         default: return;
     }
 
