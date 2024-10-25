@@ -9,8 +9,19 @@ figureSelect.addEventListener('change', (e) => {
     
     draw(curFigure);
 });
-
 // центр системы координат = центр фигуры
+
+// координатная ось TEST
+const xyz = {
+    vertices: [
+     [0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]
+    ],
+
+    faces: [
+        [0, 1], [0, 2], [0, 3]
+    ]
+}
+
 const cube = {
     //вершины
     vertices: [
@@ -165,6 +176,7 @@ const dodecahedron = {
 let showVertices = true;
 let showEdges = true;
 let showCube = false;
+let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 
@@ -394,6 +406,32 @@ function draw() {
             }
         });
         ctx.stroke();
+    }
+
+    //TEST
+    if (showXYZ)
+    {
+        const transformedXYZ = xyz.vertices.map(vertex => {
+            let point = [...vertex, 1];
+            point = multiplyMatrixAndPoint(rotationX, point);
+            point = multiplyMatrixAndPoint(rotationY, point);
+            point = multiplyMatrixAndPoint(rotationZ, point);
+            point = multiplyMatrixAndPoint(scaling, point);
+            return project([point[0], point[1], point[2]]);
+        });
+
+        styles = ['red', 'lightgreen', 'blue'];
+        let n_style = 0;
+        xyz.faces.forEach(face => {
+            ctx.beginPath();
+            ctx.strokeStyle = styles[n_style];
+            const [x1, y1] = transformedXYZ[face[0]];
+            const [x2, y2] = transformedXYZ[face[1]];
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            n_style++;
+        });
     }
 }
 
