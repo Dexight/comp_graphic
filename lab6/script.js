@@ -179,15 +179,18 @@ function getScaleMatrix(scale) {
     ];
 }
 
-// Проекция 
 function project([x, y, z]) {
     const distance = 3;
     const scale = 300;
+
+    const adjustedZ = Math.max(z + distance, 0.1); // Установка минимального значения для z
+
     return [
-        (x / (z + distance)) * scale + canvas.width / 2,
-        (canvas.height / 2 - (y / (z + distance)) * scale) // Инвертируем Y
+        (x / adjustedZ) * scale + canvas.width / 2,
+        (canvas.height / 2 - (y / adjustedZ) * scale) // Инвертируем Y
     ];
 }
+
 
 
 let customFigure = null; 
