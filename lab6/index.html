@@ -14,30 +14,25 @@
             height: 100vh;
             background-color: #f0f0f0;
         }
-
         .canvas-container {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
         }
-
         canvas {
             border: 1px solid black;
         }
-
         .controls {
             display: flex;
             flex-direction: column;
             justify-content: center;
             margin-bottom: 20px;
         }
-
         .controls label {
             margin-bottom: 10px;
         }
-
-        #figure-list{
+        #figure-list {
             display: flex;
             justify-content: center;
         }
@@ -50,13 +45,15 @@
     <div class="controls">
         <div id="figure-list">
             <select id="figure-select">
-              <option value="0" disabled selected>Выберите фигуру</option>
-              <option value="1">Тетраэдр</option>
-              <option value="2">Куб</option>
-              <option value="3">Октаэдр</option>
-              <option value="4">Икосаэдр</option>
+                <option value="0" disabled selected>Выберите фигуру</option>
+                <option value="1">Тетраэдр</option>
+                <option value="2">Куб</option>
+                <option value="3">Октаэдр</option>
+                <option value="4">Икосаэдр</option>
             </select>
         </div>
+        
+        <button id="load-obj">Загрузить из файла</button>
 
         <label>
             Поворот по X: <input type="range" id="rotateX" min="0" max="360" step="1" value="0">
@@ -68,7 +65,7 @@
             Поворот по Z: <input type="range" id="rotateZ" min="0" max="360" step="1" value="0">
         </label>
         <label>
-            Масштаб: <input type="range" id="scale" min="0" max="2" step="0.1" value="1">
+            Масштаб: <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1">
         </label>
         <label>
             <input type="checkbox" id="showVertices" checked> Вершины
@@ -76,11 +73,9 @@
         <label>
             <input type="checkbox" id="showEdges" checked> Грани
         </label>
-        
         <label>
             <input type="checkbox" id="showCube"> Отобразить куб
         </label>
-    </div>
     </div>
     <script src="script.js"></script>
 </body>
