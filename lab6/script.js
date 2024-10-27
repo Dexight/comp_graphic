@@ -179,6 +179,7 @@ let showCube = false;
 let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
+let translateX = 0, translateY = 0, translateZ = 0;
 
 document.getElementById('rotateX').addEventListener('input', (e) => {
     rotateX = parseFloat(e.target.value) * Math.PI / 180;
@@ -192,6 +193,21 @@ document.getElementById('rotateY').addEventListener('input', (e) => {
 
 document.getElementById('rotateZ').addEventListener('input', (e) => {
     rotateZ = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+document.getElementById('translateX').addEventListener('input', (e) => {
+    translateX = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('translateY').addEventListener('input', (e) => {
+    translateY = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('translateZ').addEventListener('input', (e) => {
+    translateZ = parseFloat(e.target.value);
     draw();
 });
 
@@ -259,6 +275,15 @@ function getScaleMatrix(scale) {
         [0, 0, scale, 0],
         [0, 0, 0, 1]
     ];
+}
+
+function getTranslationMatrix(dx, dy, dz){
+    return [
+        [1, 0, 0, dx],
+        [0, 1, 0, dy],
+        [0, 0, 1, dz],
+        [0, 0, 0, 1]
+        ];
 }
 
 function project([x, y, z]) {
@@ -331,6 +356,7 @@ function draw() {
     const rotationY = getRotationYMatrix(rotateY);
     const rotationZ = getRotationZMatrix(rotateZ);
     const scaling = getScaleMatrix(scale);
+    const translating = getTranslationMatrix(translateX, translateY, translateZ)
 
     let figure;
     let isCube = false;
@@ -356,6 +382,7 @@ function draw() {
         point = multiplyMatrixAndPoint(rotationY, point);
         point = multiplyMatrixAndPoint(rotationZ, point);
         point = multiplyMatrixAndPoint(scaling, point);
+        point = multiplyMatrixAndPoint(translating, point);
         return project([point[0], point[1], point[2]]);
     });
 
@@ -392,6 +419,7 @@ function draw() {
             point = multiplyMatrixAndPoint(rotationY, point);
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
+            point = multiplyMatrixAndPoint(translating, point);
             return project([point[0], point[1], point[2]]);
         });
 
@@ -417,6 +445,7 @@ function draw() {
             point = multiplyMatrixAndPoint(rotationY, point);
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
+            point = multiplyMatrixAndPoint(translating, point);
             return project([point[0], point[1], point[2]]);
         });
 
