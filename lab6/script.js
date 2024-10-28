@@ -231,6 +231,36 @@ document.getElementById('showCube').addEventListener('change', (e) => {
     draw();
 });
 
+// Обработчики для чекбоксов
+document.getElementById('reflectXY').addEventListener('change', draw);
+
+document.getElementById('reflectXZ').addEventListener('change', draw);
+
+document.getElementById('reflectYZ').addEventListener('change', draw);
+
+// Перемножение матриц
+function multiplyMatrices(matrixA, matrixB) {
+    const rowsA = matrixA.length;
+    const colsA = matrixA[0].length;
+    const rowsB = matrixB.length;
+    const colsB = matrixB[0].length;
+
+    if (colsA !== rowsB) {
+        throw new Error("Количество столбцов в первой матрице должно совпадать с количеством строк во второй матрице.");
+    }
+
+    const result = Array.from({ length: rowsA }, () => Array(colsB).fill(0));
+
+    for (let i = 0; i < rowsA; i++) {
+        for (let j = 0; j < colsB; j++) {
+            for (let k = 0; k < colsA; k++) {
+                result[i][j] += matrixA[i][k] * matrixB[k][j];
+            }
+        }
+    }
+    return result;
+}
+
 function multiplyMatrixAndPoint(matrix, point) {
     let [x, y, z] = point;
     return [
@@ -276,7 +306,7 @@ function getScaleMatrix(scale) {
         [0, 0, 0, 1]
     ];
 }
-
+//Матрица смещения
 function getTranslationMatrix(dx, dy, dz){
     return [
         [1, 0, 0, dx],
@@ -284,6 +314,44 @@ function getTranslationMatrix(dx, dy, dz){
         [0, 0, 1, dz],
         [0, 0, 0, 1]
         ];
+}
+// матрица отражения
+function getReflectionMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+    ]
+}
+
+//Матрица отражения по XY
+function getReflectionXYMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, -1, 0],
+        [0, 0, 0, 1]
+    ];
+}
+
+//Матрица отражения по XZ
+function getReflectionXZMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0,-1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+}
+//матрица отражения по YZ
+function getReflectionYZMatrix(){
+    return [
+        [-1, 0, 0, 0],
+        [0, 1, 0, 0], 
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
 }
 
 function project([x, y, z]) {
@@ -349,6 +417,8 @@ function parseOBJ(data) {
     };
 }
 
+
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -357,6 +427,17 @@ function draw() {
     const rotationZ = getRotationZMatrix(rotateZ);
     const scaling = getScaleMatrix(scale);
     const translating = getTranslationMatrix(translateX, translateY, translateZ)
+    reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
+    
+    if (document.getElementById("reflectXY").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
+    }
+    if (document.getElementById("reflectXZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXZMatrix());
+    }
+    if (document.getElementById("reflectYZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionYZMatrix());
+    }
 
     let figure;
     let isCube = false;
@@ -383,6 +464,7 @@ function draw() {
         point = multiplyMatrixAndPoint(rotationZ, point);
         point = multiplyMatrixAndPoint(scaling, point);
         point = multiplyMatrixAndPoint(translating, point);
+        point = multiplyMatrixAndPoint(reflectionMatrix, point);
         return project([point[0], point[1], point[2]]);
     });
 
@@ -420,6 +502,7 @@ function draw() {
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
             point = multiplyMatrixAndPoint(translating, point);
+            point = multiplyMatrixAndPoint(reflectionMatrix, point);
             return project([point[0], point[1], point[2]]);
         });
 
@@ -446,6 +529,7 @@ function draw() {
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
             point = multiplyMatrixAndPoint(translating, point);
+            point = multiplyMatrixAndPoint(reflectionMatrix, point);
             return project([point[0], point[1], point[2]]);
         });
 
