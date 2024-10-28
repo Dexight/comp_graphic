@@ -180,6 +180,8 @@ let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 let translateX = 0, translateY = 0, translateZ = 0;
+let Ax = 0, Ay = 0, Az = 0;
+let Bx = 0, By = 0, Bz = 0;
 
 document.getElementById('rotateX').addEventListener('input', (e) => {
     rotateX = parseFloat(e.target.value) * Math.PI / 180;
@@ -228,6 +230,33 @@ document.getElementById('showEdges').addEventListener('change', (e) => {
 
 document.getElementById('showCube').addEventListener('change', (e) => {
     showCube = e.target.checked;
+    draw();
+});
+
+document.getElementById('AxInput').addEventListener('input', (e) => {
+    Ax = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AyInput').addEventListener('input', (e) => {
+    Ay = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AzInput').addEventListener('input', (e) => {
+    Az = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('BxInput').addEventListener('input', (e) => {
+    Bx = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('ByInput').addEventListener('input', (e) => {
+    By = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('BzInput').addEventListener('input', (e) => {
+    Bz = parseFloat(e.target.value);
     draw();
 });
 
@@ -354,6 +383,7 @@ function getReflectionYZMatrix(){
     ]
 }
 
+
 function project([x, y, z]) {
     const distance = 3;
     const scale = 300;
@@ -417,7 +447,17 @@ function parseOBJ(data) {
     };
 }
 
+function drawLine(point1, point2){
+    point1Proj = project(point1);
+    point2Proj = project(point2);
 
+    ctx.beginPath();
+    ctx.moveTo(point1Proj[0], point1Proj[1]);
+    ctx.lineTo(point2Proj[0], point2Proj[1]);
+    ctx.strokeStyle = 'yellow';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -456,7 +496,7 @@ function draw() {
         case 5: figure = dodecahedron; break;
         default: return;
     }
-
+    drawLine([Ax, Ay, Az], [Bx, By, Bz]);
     const transformedVertices = figure.vertices.map(vertex => {
         let point = [...vertex, 1];  
         point = multiplyMatrixAndPoint(rotationX, point);
