@@ -180,6 +180,17 @@ let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 let translateX = 0, translateY = 0, translateZ = 0;
+let currentProjection = 'perspective';
+
+document.getElementById('perspectiveButton').addEventListener('click', () => {
+    currentProjection = 'perspective';
+    draw(); 
+});
+
+document.getElementById('axonometricButton').addEventListener('click', () => {
+    currentProjection = 'axonometric';
+    draw(); 
+});
 
 document.getElementById('rotateX').addEventListener('input', (e) => {
     rotateX = parseFloat(e.target.value) * Math.PI / 180;
@@ -286,7 +297,7 @@ function getTranslationMatrix(dx, dy, dz){
         ];
 }
 
-function project(point) {
+function projectPerspective(point) {
     const c = 3; 
     const scale = 100;
 
@@ -309,6 +320,25 @@ function project(point) {
         1
     ];
 }
+
+function projectAxonometric(point) {
+    const scale = 100;
+    const angleA = Math.PI / 6; // 30 градусов
+    const angleB = Math.PI / 6; // 30 градусов
+
+    const rotationX = getRotationXMatrix(Math.PI / 6);
+    const rotationY = getRotationYMatrix(Math.PI / 6);
+    let [x, y, z, w] = multiplyMatrixAndPoint(rotationX, [point[0], point[1], point[2], 1]);
+    [x, y, z, w] = multiplyMatrixAndPoint(rotationY, [x, y, z, 1]);
+
+    return [
+        x * scale + canvas.width / 2,
+        canvas.height / 2 - y * scale, // Инвертируем Y
+        0,
+        1
+    ];
+}
+
 
 let customFigure = null; 
 
@@ -361,6 +391,13 @@ function parseOBJ(data) {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let project = projectPerspective; 
+    if (currentProjection === 'axonometric') {
+        project = projectAxonometric;
+    } else {
+        project = projectPerspective;
+    }
 
     const rotationX = getRotationXMatrix(rotateX);
     const rotationY = getRotationYMatrix(rotateY);
