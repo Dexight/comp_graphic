@@ -384,19 +384,29 @@ function getReflectionYZMatrix(){
 }
 
 
-function project([x, y, z]) {
-    const distance = 3;
-    const scale = 300;
+function project(point) {
+    const c = 3; 
+    const scale = 100;
 
-    const adjustedZ = Math.max(z + distance, 0.1); // Установка минимального значения для z
+    const perspectiveMatrix = [
+        [scale, 0, 0, 0],
+        [0, -scale, 0, 0], // -scale для инверсии Y
+        [0, 0, 1, 0], 
+        [0, 0, -1 / c, 1]
+    ];
+
+    let [x, y, z, w] = multiplyMatrixAndPoint(perspectiveMatrix, [point[0], point[1], point[2], 1]);
+
+    // Установка минимального значения, чтобы избежать неправильной отрисовки
+    const adjustedW = Math.max(w, 0.1);
 
     return [
-        (x / adjustedZ) * scale + canvas.width / 2,
-        (canvas.height / 2 - (y / adjustedZ) * scale) // Инвертируем Y
+        (x / adjustedW) + canvas.width / 2, 
+        (y / adjustedW) + canvas.height / 2,  
+        0, 
+        1
     ];
 }
-
-
 
 let customFigure = null; 
 
