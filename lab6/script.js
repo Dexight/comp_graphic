@@ -261,7 +261,7 @@ document.getElementById('BzInput').addEventListener('input', (e) => {
 });
 
 document.getElementById('angleRotationLine').addEventListener('input', (e) => {
-    angle = parseFloat(e.target.value);
+    angle = parseFloat(e.target.value) * Math.PI / 180;
     draw();
 });
 
