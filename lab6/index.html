@@ -10,7 +10,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             height: 100vh;
             background-color: #f0f0f0;
         }
@@ -19,6 +18,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
+            margin-top: 10px;
         }
         canvas {
             border: 1px solid black;
@@ -86,10 +86,40 @@
         <label>
             Смещение по z: <input type="number" id="translateZ"  value = 0>
         </label>
+        <label>
+            <input type="checkbox" id="reflectXY"> Отражение относительно XY
+        </label>
+        <label>
+            <input type="checkbox" id="reflectXZ"> Отражение относительно XZ
+        </label>
+        <label>
+            <input type="checkbox" id="reflectYZ"> Отражение относительно YZ
+        </label>
+
+        <label>
+            Ax: <input type="number" id="AxInput"  value = 0>
+        </label>
+        <label>
+            Ay: <input type="number" id="AyInput"  value = 0>
+        </label>
+        <label>
+            Az: <input type="number" id="AzInput"  value = 0>
+        </label>
+        <label>
+            Bx: <input type="number" id="BxInput"  value = 0>
+        </label>
+        <label>
+            By: <input type="number" id="ByInput"  value = 0>
+        </label>
+        <label>
+            Bz: <input type="number" id="BzInput"  value = 0>
+        </label>
+        <label>
+            Угол поворота вокруг прямой: <input type="number" id="angleRotationLine"  value = 0>
+        </label>
 
         <button id="perspectiveButton">Перспективная проекция</button>
         <button id="axonometricButton">Аксонометрическая проекция</button>
-
     </div>
     <script src="script.js"></script>
 </body>
