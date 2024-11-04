@@ -180,13 +180,15 @@ let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 let translateX = 0, translateY = 0, translateZ = 0;
+let Ax = 0, Ay = 0, Az = 0;
+let Bx = 0, By = 0, Bz = 0;
+let angle = 0;
 let currentProjection = 'perspective';
 
 document.getElementById('perspectiveButton').addEventListener('click', () => {
     currentProjection = 'perspective';
     draw(); 
 });
-
 document.getElementById('axonometricButton').addEventListener('click', () => {
     currentProjection = 'axonometric';
     draw(); 
@@ -242,6 +244,68 @@ document.getElementById('showCube').addEventListener('change', (e) => {
     draw();
 });
 
+document.getElementById('AxInput').addEventListener('input', (e) => {
+    Ax = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AyInput').addEventListener('input', (e) => {
+    Ay = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AzInput').addEventListener('input', (e) => {
+    Az = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('BxInput').addEventListener('input', (e) => {
+    Bx = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('ByInput').addEventListener('input', (e) => {
+    By = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('BzInput').addEventListener('input', (e) => {
+    Bz = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('angleRotationLine').addEventListener('input', (e) => {
+    angle = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+// Обработчики для чекбоксов
+document.getElementById('reflectXY').addEventListener('change', draw);
+
+document.getElementById('reflectXZ').addEventListener('change', draw);
+
+document.getElementById('reflectYZ').addEventListener('change', draw);
+
+// Перемножение матриц
+function multiplyMatrices(matrixA, matrixB) {
+    const rowsA = matrixA.length;
+    const colsA = matrixA[0].length;
+    const rowsB = matrixB.length;
+    const colsB = matrixB[0].length;
+
+    if (colsA !== rowsB) {
+        throw new Error("Количество столбцов в первой матрице должно совпадать с количеством строк во второй матрице.");
+    }
+
+    const result = Array.from({ length: rowsA }, () => Array(colsB).fill(0));
+
+    for (let i = 0; i < rowsA; i++) {
+        for (let j = 0; j < colsB; j++) {
+            for (let k = 0; k < colsA; k++) {
+                result[i][j] += matrixA[i][k] * matrixB[k][j];
+            }
+        }
+    }
+    return result;
+}
+
 function multiplyMatrixAndPoint(matrix, point) {
     let [x, y, z] = point;
     return [
@@ -287,7 +351,7 @@ function getScaleMatrix(scale) {
         [0, 0, 0, 1]
     ];
 }
-
+//Матрица смещения
 function getTranslationMatrix(dx, dy, dz){
     return [
         [1, 0, 0, dx],
@@ -295,6 +359,66 @@ function getTranslationMatrix(dx, dy, dz){
         [0, 0, 1, dz],
         [0, 0, 0, 1]
         ];
+}
+// матрица отражения
+function getReflectionMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+    ]
+}
+
+//Матрица отражения по XY
+function getReflectionXYMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, -1, 0],
+        [0, 0, 0, 1]
+    ];
+}
+
+//Матрица отражения по XZ
+function getReflectionXZMatrix(){
+    return [
+        [1, 0, 0, 0],
+        [0,-1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+}
+//матрица отражения по YZ
+function getReflectionYZMatrix(){
+    return [
+        [-1, 0, 0, 0],
+        [0, 1, 0, 0], 
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+}
+// параметры - 2 точки, задающие прямую.
+function getRotationAroundLineMatrix(point0, point1, angle){
+    [ax, ay, az] = point0;
+    [bx, by, bz] = point1;
+    //console.log(ax, ay, az);
+    //console.log(bx, by, bz);
+    cord = [bx-ax, by-ay, bz-az];
+    len = Math.sqrt(cord[0]*cord[0] + cord[1]*cord[1]  + cord[2]*cord[2]);
+    // console.log(len);
+    normCord = [cord[0] / len, cord[1] / len, cord[2] / len];
+    [l, m, n] = normCord;
+    let cosPhi = Math.cos(angle);
+    let sinPhi = Math.sin(angle);
+
+
+    return [
+        [l*l + cosPhi*(1-l*l), l*(1-cosPhi)*m + n*sinPhi, l*(1-cosPhi)*n - m*sinPhi, 0],
+        [l*(1-cosPhi)*m - n*sinPhi, m*m + cosPhi*(1-m*m), m*(1-cosPhi)*n + l*sinPhi, 0],
+        [l*(1-cosPhi)*n + m*sinPhi, m*(1-cosPhi)*n - l*sinPhi, n*n +cosPhi*(1-n*n), 0],
+        [0,0,0,1]
+    ];
 }
 
 function projectPerspective(point) {
@@ -338,7 +462,6 @@ function projectAxonometric(point) {
         1
     ];
 }
-
 
 let customFigure = null; 
 
@@ -388,6 +511,25 @@ function parseOBJ(data) {
         faces: faces,
     };
 }
+//функция для рисования прямой
+function drawLine(point1, point2, color){
+    let project = projectPerspective; 
+    if (currentProjection === 'axonometric') {
+        project = projectAxonometric;
+    } else {
+        project = projectPerspective;
+    }
+
+    point1Proj = project(point1);
+    point2Proj = project(point2);
+
+    ctx.beginPath();
+    ctx.moveTo(point1Proj[0], point1Proj[1]);
+    ctx.lineTo(point2Proj[0], point2Proj[1]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -404,6 +546,18 @@ function draw() {
     const rotationZ = getRotationZMatrix(rotateZ);
     const scaling = getScaleMatrix(scale);
     const translating = getTranslationMatrix(translateX, translateY, translateZ)
+    reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
+    const RotateAroundLineMatrix  = getRotationAroundLineMatrix([Ax,Ay,Az], [Bx, By, Bz], angle);
+    console.log(RotateAroundLineMatrix[0], RotateAroundLineMatrix[1], RotateAroundLineMatrix[2], RotateAroundLineMatrix[3]);
+    if (document.getElementById("reflectXY").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
+    }
+    if (document.getElementById("reflectXZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXZMatrix());
+    }
+    if (document.getElementById("reflectYZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionYZMatrix());
+    }
 
     let figure;
     let isCube = false;
@@ -422,14 +576,17 @@ function draw() {
         case 5: figure = dodecahedron; break;
         default: return;
     }
-
+    drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
     const transformedVertices = figure.vertices.map(vertex => {
         let point = [...vertex, 1];  
+        if(Ax !== Bx || Ay !== By || Az !== Bz)
+            point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
         point = multiplyMatrixAndPoint(rotationX, point);
         point = multiplyMatrixAndPoint(rotationY, point);
         point = multiplyMatrixAndPoint(rotationZ, point);
         point = multiplyMatrixAndPoint(scaling, point);
         point = multiplyMatrixAndPoint(translating, point);
+        point = multiplyMatrixAndPoint(reflectionMatrix, point);  
         return project([point[0], point[1], point[2]]);
     });
 
@@ -461,12 +618,16 @@ function draw() {
     // отображение куба
     if (showCube && !isCube) {
         const transformedVerticesCube = cube.vertices.map(vertex => {
-            let point = [...vertex, 1];  
+            let point = [...vertex, 1];
+            if(Ax !== Bx || Ay !== By || Az !== Bz)
+                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);  
             point = multiplyMatrixAndPoint(rotationX, point);
             point = multiplyMatrixAndPoint(rotationY, point);
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
             point = multiplyMatrixAndPoint(translating, point);
+            point = multiplyMatrixAndPoint(reflectionMatrix, point);
+            console.log(RotateAroundLineMatrix)
             return project([point[0], point[1], point[2]]);
         });
 
@@ -488,11 +649,16 @@ function draw() {
     {
         const transformedXYZ = xyz.vertices.map(vertex => {
             let point = [...vertex, 1];
+            if(Ax !== Bx || Ay !== By || Az !== Bz)
+                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
             point = multiplyMatrixAndPoint(rotationX, point);
             point = multiplyMatrixAndPoint(rotationY, point);
             point = multiplyMatrixAndPoint(rotationZ, point);
             point = multiplyMatrixAndPoint(scaling, point);
             point = multiplyMatrixAndPoint(translating, point);
+            point = multiplyMatrixAndPoint(reflectionMatrix, point);
+            if(Ax !== Bx && Ay !== By && Az !== Bz)
+                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
             return project([point[0], point[1], point[2]]);
         });
 
