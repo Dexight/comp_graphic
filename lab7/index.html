@@ -8,13 +8,15 @@
         body {
             margin: 0;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: space-evenly;
             height: 100vh;
             background-color: #f0f0f0;
         }
         .canvas-container {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
@@ -36,13 +38,12 @@
             display: flex;
             justify-content: center;
         }
+
     </style>
 </head>
 <body>
     <div class="canvas-container">
         <canvas id="canvas" width="600" height="600"></canvas>
-    </div>
-    <div class="controls">
         <div id="figure-list">
             <select id="figure-select">
                 <option value="0" disabled selected>Выберите фигуру</option>
@@ -53,9 +54,10 @@
                 <option value="5">Додекаэдр</option>
             </select>
         </div>
-        
         <button id="load-obj">Загрузить из файла</button>
+    </div>
 
+    <div class="controls">
         <label>
             Поворот по X: <input type="range" id="rotateX" min="0" max="360" step="1" value="0">
         </label>
