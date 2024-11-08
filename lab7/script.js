@@ -1,15 +1,82 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
+let functionSelect = document.getElementById('function-select');
+let surfacePanel = document.getElementById('surfacePanel');
 let curFigure = 0;
+let curFunction = 0;
+//========7.3=========
+let xMin = -1, xMax = 1;
+let yMin = -1, yMax = 1;
+let segments = 30;
 
+// Функция для задания сегмента поверхности
+function defaultSegment(x, y) {return x*y;} 
+function f1(x, y) { return -Math.sqrt(x*x+y*y); }
+function f2 (x, y) { return x*x+y*y; }
+function f3 (x, y) { return Math.sin(x * Math.PI) * Math.cos(y * Math.PI); }
+function f4 (x, y) { return Math.sin(x * Math.PI) + Math.cos(y * Math.PI); }
+function f5 (x, y) { return 5*(Math.cos((x*x+y*y+1)*Math.PI)/(x*x+y*y+1)+0.1); }
+function f6 (x, y) { return Math.cos((x*x+y*y)*Math.PI)/(x*x+y*y+1); }
+
+function buildSurface() {
+    
+    let surfaceVertices = [];
+    let surfaceFaces = [];
+
+    const dx = (xMax - xMin) / segments;
+    const dy = (yMax - yMin) / segments;
+
+    // Создаём вершины
+    for (let i = 0; i <= segments; i++) {
+        for (let j = 0; j <= segments; j++) {
+            const x = xMin + i * dx;
+            const y = yMin + j * dy;
+            switch(curFunction)
+            {
+                case 0: z = defaultSegment(x, y); break;
+                case 1: z = f1(x, y); break;
+                case 2: z = f2(x, y); break;
+                case 3: z = f3(x, y); break;
+                case 4: z = f4(x, y); break;
+                case 5: z = f5(x, y); break;
+                case 6: z = f6(x, y); break;
+                default: defaultSegment(x, y); break;
+            }
+            surfaceVertices.push([x, y, z]);
+        }
+    }
+
+    // Создаём грани
+    for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < segments; j++) {
+            const idx = i * (segments + 1) + j;
+            const nextRowIdx = (i + 1) * (segments + 1) + j;
+            surfaceFaces.push([idx, idx + 1, nextRowIdx + 1, nextRowIdx]);
+        }
+    }
+
+    return { surfaceVertices, surfaceFaces }
+}
+document.getElementById('surfaceXmin').addEventListener('input', (e) => { xMin = parseFloat(e.target.value); draw();});
+document.getElementById('surfaceXmax').addEventListener('input', (e) => { xMax = parseFloat(e.target.value); draw();});
+document.getElementById('surfaceYmin').addEventListener('input', (e) => { yMin = parseFloat(e.target.value); draw();});
+document.getElementById('surfaceYmax').addEventListener('input', (e) => { yMax = parseFloat(e.target.value); draw();});
+document.getElementById('surfaceSegments').addEventListener('input', (e) => { segments = parseInt(e.target.value); draw();});
+// Обработчик выбора функции из выпадающего списка
+functionSelect.addEventListener('change', (e) => {
+    curFunction = parseInt(e.target.value);
+    document.getElementById("rotateX").value = "270";
+    rotateX = 270*Math.PI/180;
+    draw();
+});
+//=====================
 // Обработчик выбора фигуры из выпадающего списка
 figureSelect.addEventListener('change', (e) => {
     curFigure = parseInt(e.target.value);
     
-    draw(curFigure);
+    draw();
 });
-// центр системы координат = центр фигуры
 
 // координатная ось TEST
 const xyz = {
@@ -78,8 +145,6 @@ function pointDistance(p1, p2)
     const dz = p2.z - p1.z;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
-
-//ab = 2 * Math.sin( 36 * Math.PI / 180);
 
 dist = pointDistance({x:0, y:0, z:0}, {x:0, y:0.5, z:1});//для верхней и нижней точек
 
@@ -557,6 +622,8 @@ function draw() {
 
     let figure;
     let isCube = false;
+    surfacePanel.style.display = 'none';
+    let showSurfacePanel = false;
     switch(curFigure) {
         case 0: 
             if (customFigure) {
@@ -570,8 +637,13 @@ function draw() {
         case 3: figure = octahedron; break;
         case 4: figure = icosahedron; break;
         case 5: figure = dodecahedron; break;
+        case 6: bs = buildSurface(); 
+                figure = {vertices: bs.surfaceVertices,faces: bs.surfaceFaces,}; 
+                showSurfacePanel = true; 
+                break;
         default: return;
     }
+    
     drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
     const transformedVertices = figure.vertices.map(vertex => {
         let point = [...vertex, 1];  
@@ -670,6 +742,8 @@ function draw() {
             n_style++;
         });
     }
+
+    surfacePanel.style.display = showSurfacePanel? 'flex':'none';
 }
 
 draw();
