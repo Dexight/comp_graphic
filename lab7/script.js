@@ -4,8 +4,44 @@ let figureSelect = document.getElementById('figure-select');
 let load_obj = document.getElementById('load-obj');
 let functionSelect = document.getElementById('function-select');
 let surfacePanel = document.getElementById('surfacePanel');
+let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
+
+//========7.2==========
+let formingPoints = [];
+let numDivisions = 0;
+let rotationAxis = 0;
+
+function buildRotationFigure(){
+    let figureVertices = [];
+    let figureFaces = [];
+
+}
+
+//обработчик для ввода образующей
+document.getElementById('formingPoints').addEventListener('input', (e)=>{
+    const formingPointsInput = e.target.value;
+    formingPoints = formingPointsInput.split(';').map(point => {const [x, y, z] = point.split(',').map(parseFloat);
+        return [x, y, z];
+    })
+    draw();
+});
+
+//Обработчик для ввода числа разбиений
+document.getElementById('numDivisions').addEventListener('input', (e)=>{
+    numDivisions = parseFloat(e.target.value);
+    draw();
+});
+
+let rotationAxisSelect = document.getElementById('rotationAxis'); // выбор оси для вращения
+rotationAxisSelect.addEventListener('change', (e) => {
+    rotationAxis = parseInt(e.target.value);
+    draw();
+});
+
+//====================
+
 //========7.3=========
 let Zcoef = 1;
 
@@ -628,6 +664,8 @@ function draw() {
     let isCube = false;
     surfacePanel.style.display = 'none';
     let showSurfacePanel = false;
+    rotationFigurePanel.style.display = 'none';
+    let showRotationFigurePanel = false;
     switch(curFigure) {
         case 0: 
             if (customFigure) {
@@ -644,6 +682,10 @@ function draw() {
         case 6: bs = buildSurface(); 
                 figure = {vertices: bs.surfaceVertices,faces: bs.surfaceFaces,}; 
                 showSurfacePanel = true; 
+                break;
+        case 7: rf = buildRotationFigure();
+                //figure = {vertices: rf.figureVertices,faces: rf.figure.figureFaces};
+                showRotationFigurePanel = true;
                 break;
         default: return;
     }
@@ -748,6 +790,7 @@ function draw() {
     }
 
     surfacePanel.style.display = showSurfacePanel? 'flex':'none';
+    rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
     load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
