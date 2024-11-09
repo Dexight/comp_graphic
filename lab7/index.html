@@ -77,6 +77,7 @@
                     <option value="4">Икосаэдр</option>
                     <option value="5">Додекаэдр</option>
                     <option value="6">График</option>
+                    <option value="7">Фигура вращения</option>
                 </select>
             </div>
         </div>
@@ -199,6 +200,28 @@
         
         <button id="save-surface">Сохранить график</button>
     </div>
+
+    <div class = "controls2" id = "rotationFigurePanel">
+        <label>Генерация фигуры вращения:</label>
+        <br>
+            Образующие точки(x1, y1, z1; x2, y2, z2; ...):<input type="text" id="formingPoints" value="10, 20, 30; 20, 0, 0; 30, 0, 0">
+        <br>
+        <label>Ось вращения: <select id="rotationAxis">
+            <option value="x">X</option>
+            <option value="y">Y</option>
+            <option value="z">Z</option>
+        </select></label>
+        <br><br>
+        <label>Число разбиений: <input type="number" id="numDivisions" value="10"></label>
+        <br>
+        <button id="generate-RotationFigure">Генерация</button>
+        <br>
+        <button id="load-RotationFigure">Загрузить фигуру из файла</button>
+        <br>
+        <button id="save-RotationFigure">Сохранить фигуру в файл</button>
+    </div>
+
+
     <script src="script.js"></script>
 </body>
 </html>
