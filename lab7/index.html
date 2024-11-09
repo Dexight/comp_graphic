@@ -24,6 +24,7 @@
         }
         canvas {
             border: 1px solid black;
+            margin-bottom: 5px;
         }
         .controls {
             display: flex;
@@ -44,30 +45,41 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 4px;
+            padding: 15px;
         }
 
         .controls2 input{
             text-align: center;
             width: 30%;
         }
+
+        #function-select{
+            text-align: center;
+        }
+
+        #load-obj{
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="canvas-container">
         <canvas id="canvas" width="600" height="600"></canvas>
-        <div id="figure-list">
-            <select id="figure-select">
-                <option value="0" disabled selected>Выберите фигуру</option>
-                <option value="1">Тетраэдр</option>
-                <option value="2">Куб</option>
-                <option value="3">Октаэдр</option>
-                <option value="4">Икосаэдр</option>
-                <option value="5">Додекаэдр</option>
-                <option value="6">График</option>
-            </select>
+        <div style="display: flex;">
+            <button id="load-obj">Загрузить из файла</button>
+
+            <div id="figure-list">
+                <select id="figure-select">
+                    <option value="0" disabled selected>Выберите фигуру</option>
+                    <option value="1">Тетраэдр</option>
+                    <option value="2">Куб</option>
+                    <option value="3">Октаэдр</option>
+                    <option value="4">Икосаэдр</option>
+                    <option value="5">Додекаэдр</option>
+                    <option value="6">График</option>
+                </select>
+            </div>
         </div>
-        <button id="load-obj">Загрузить из файла</button>
     </div>
 
     <div class="controls">
@@ -154,11 +166,16 @@
 
         <label>yMax</label>
         <input type="number" id="surfaceYmax"  value = 1>
+        
         <br>
 
         <label>Количество разбиений</label>
         <input type="number" id="surfaceSegments"  value = 30>
+        
+        <br>
 
+        <label>Функция</label>
+        
         <div id="functions-list">
             <select id="function-select">
                 <option value="0" selected>x*y</option>
@@ -170,6 +187,17 @@
                 <option value="6">сos(x²+y²)/(x²+y²+1)</option>
             </select>
         </div>
+        
+        <label>Коэфциент функции:</label>
+        <input type="number" id="Zcoef" min="-100" max="100" step="1" value="1">
+        
+        <br>
+        
+        <button id="load-surface">Загрузить график из файла</button>
+        
+        <br>
+        
+        <button id="save-surface">Сохранить график</button>
     </div>
     <script src="script.js"></script>
 </body>

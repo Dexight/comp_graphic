@@ -1,11 +1,14 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
+let load_obj = document.getElementById('load-obj');
 let functionSelect = document.getElementById('function-select');
 let surfacePanel = document.getElementById('surfacePanel');
 let curFigure = 0;
 let curFunction = 0;
 //========7.3=========
+let Zcoef = 1;
+
 let xMin = -1, xMax = 1;
 let yMin = -1, yMax = 1;
 let segments = 30;
@@ -14,10 +17,10 @@ let segments = 30;
 function defaultSegment(x, y) {return x*y;} 
 function f1(x, y) { return -Math.sqrt(x*x+y*y); }
 function f2 (x, y) { return x*x+y*y; }
-function f3 (x, y) { return Math.sin(x * Math.PI) * Math.cos(y * Math.PI); }
-function f4 (x, y) { return Math.sin(x * Math.PI) + Math.cos(y * Math.PI); }
-function f5 (x, y) { return 5*(Math.cos((x*x+y*y+1)*Math.PI)/(x*x+y*y+1)+0.1); }
-function f6 (x, y) { return Math.cos((x*x+y*y)*Math.PI)/(x*x+y*y+1); }
+function f3 (x, y) { return Math.sin(x) * Math.cos(y); }
+function f4 (x, y) { return Math.sin(x) + Math.cos(y); }
+function f5 (x, y) { return 5*(Math.cos(x*x+y*y+1)/(x*x+y*y+1)+0.1); }
+function f6 (x, y) { return Math.cos(x*x+y*y)/(x*x+y*y+1); }
 
 function buildSurface() {
     
@@ -41,8 +44,9 @@ function buildSurface() {
                 case 4: z = f4(x, y); break;
                 case 5: z = f5(x, y); break;
                 case 6: z = f6(x, y); break;
-                default: defaultSegment(x, y); break;
+                default: z = defaultSegment(x, y); break;
             }
+            z = z*Zcoef;
             surfaceVertices.push([x, y, z]);
         }
     }
@@ -63,6 +67,7 @@ document.getElementById('surfaceXmax').addEventListener('input', (e) => { xMax =
 document.getElementById('surfaceYmin').addEventListener('input', (e) => { yMin = parseFloat(e.target.value); draw();});
 document.getElementById('surfaceYmax').addEventListener('input', (e) => { yMax = parseFloat(e.target.value); draw();});
 document.getElementById('surfaceSegments').addEventListener('input', (e) => { segments = parseInt(e.target.value); draw();});
+document.getElementById('Zcoef').addEventListener('input', (e) => {Zcoef = parseFloat(e.target.value); draw();});
 // Обработчик выбора функции из выпадающего списка
 functionSelect.addEventListener('change', (e) => {
     curFunction = parseInt(e.target.value);
@@ -74,7 +79,6 @@ functionSelect.addEventListener('change', (e) => {
 // Обработчик выбора фигуры из выпадающего списка
 figureSelect.addEventListener('change', (e) => {
     curFigure = parseInt(e.target.value);
-    
     draw();
 });
 
@@ -744,6 +748,7 @@ function draw() {
     }
 
     surfacePanel.style.display = showSurfacePanel? 'flex':'none';
+    load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
 draw();
