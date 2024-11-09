@@ -9,14 +9,62 @@ let curFigure = 0;
 let curFunction = 0;
 
 //========7.2==========
-let formingPoints = [];
-let numDivisions = 0;
+let formingPoints = [[1, 2, 3], [2, 0, 0], [3, 0, 0]];
+let numDivisions = 10;
 let rotationAxis = 0;
 
-function buildRotationFigure(){
+function buildRotationFigure() {
     let figureVertices = [];
     let figureFaces = [];
+    let angleStep = (numDivisions !== 0) ? 2 * Math.PI / numDivisions : 0;
+    console.log('forming points: ', formingPoints);
+    // Создание вершин вращаемой фигуры
+    for (let i = 0; i <= numDivisions; i++) {
+        const angle = i * angleStep;
 
+        formingPoints.forEach(([x, y, z]) => {
+            let rotatedPoint;
+
+            // Вращаем точку вокруг выбранной оси
+            switch(rotationAxis) {
+                case 0: // Вращение вокруг оси X
+                    rotatedPoint = multiplyMatrixAndPoint(getRotationXMatrix(angle), [x, y, z, 1]);
+                    break;
+                case 1: // Вращение вокруг оси Y
+                    rotatedPoint = multiplyMatrixAndPoint(getRotationYMatrix(angle), [x, y, z, 1]);
+                    break;
+                case 2: // Вращение вокруг оси Z
+                    rotatedPoint = multiplyMatrixAndPoint(getRotationZMatrix(angle), [x, y, z, 1]);
+                    break;
+                default:
+                    rotatedPoint = [x, y, z, 1];
+                    break;
+            }
+
+            // Добавляем только x, y, z координаты вершины
+            figureVertices.push([rotatedPoint[0], rotatedPoint[1], rotatedPoint[2]]);
+        });
+    }
+    console.log('vertices: ', figureVertices);
+
+    // Создание граней
+    const pointsPerDivision = formingPoints.length;
+    for (let i = 0; i < numDivisions; i++) {
+        const start = i * pointsPerDivision;
+        const nextStart = (i + 1) * pointsPerDivision;
+
+        for (let j = 0; j < pointsPerDivision - 1; j++) {
+            figureFaces.push([
+                start + j,
+                start + j + 1,
+                nextStart + j + 1,
+                nextStart + j
+            ]);
+        }
+    }
+    console.log('vertices: ', figureFaces);
+
+    return { vertices: figureVertices, faces: figureFaces };
 }
 
 //обработчик для ввода образующей
@@ -684,25 +732,28 @@ function draw() {
                 showSurfacePanel = true; 
                 break;
         case 7: rf = buildRotationFigure();
-                //figure = {vertices: rf.figureVertices,faces: rf.figure.figureFaces};
+                figure = {vertices: rf.vertices,faces: rf.faces};
                 showRotationFigurePanel = true;
                 break;
         default: return;
     }
     
     drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
-    const transformedVertices = figure.vertices.map(vertex => {
-        let point = [...vertex, 1];  
-        if(Ax !== Bx || Ay !== By || Az !== Bz)
-            point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
-        point = multiplyMatrixAndPoint(rotationX, point);
-        point = multiplyMatrixAndPoint(rotationY, point);
-        point = multiplyMatrixAndPoint(rotationZ, point);
-        point = multiplyMatrixAndPoint(scaling, point);
-        point = multiplyMatrixAndPoint(translating, point);
-        point = multiplyMatrixAndPoint(reflectionMatrix, point);  
-        return project([point[0], point[1], point[2]]);
-    });
+    if(figure.vertices!==undefined || figure.faces !==undefined){
+        const transformedVertices = figure.vertices.map(vertex => {
+                let point = [...vertex, 1];  
+                if(Ax !== Bx || Ay !== By || Az !== Bz)
+                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
+                point = multiplyMatrixAndPoint(rotationX, point);
+                point = multiplyMatrixAndPoint(rotationY, point);
+                point = multiplyMatrixAndPoint(rotationZ, point);
+                point = multiplyMatrixAndPoint(scaling, point);
+                point = multiplyMatrixAndPoint(translating, point);
+                point = multiplyMatrixAndPoint(reflectionMatrix, point);  
+                return project([point[0], point[1], point[2]]);
+            });
+    
+    
 
     // рёбра
     if (showEdges) {
@@ -788,7 +839,7 @@ function draw() {
             n_style++;
         });
     }
-
+}
     surfacePanel.style.display = showSurfacePanel? 'flex':'none';
     rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
     load_obj.style.display = showSurfacePanel? 'none' : 'inline'
