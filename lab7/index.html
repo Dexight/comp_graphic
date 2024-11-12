@@ -60,6 +60,10 @@
         #load-obj{
             margin-right: 8px;
         }
+
+        #save-obj{
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +71,7 @@
         <canvas id="canvas" width="600" height="600"></canvas>
         <div style="display: flex;">
             <button id="load-obj">Загрузить из файла</button>
+            <button id="save-obj" onclick="saveFigureToFile()">Сохранить в файл</button>
 
             <div id="figure-list">
                 <select id="figure-select">
@@ -78,6 +83,7 @@
                     <option value="5">Додекаэдр</option>
                     <option value="6">График</option>
                     <option value="7">Фигура вращения</option>
+                    <option value="8">Загрузка фигуры</option>
                 </select>
             </div>
         </div>
@@ -194,11 +200,6 @@
         
         <br>
         
-        <button id="load-surface">Загрузить график из файла</button>
-        
-        <br>
-        
-        <button id="save-surface">Сохранить график</button>
     </div>
 
     <div class = "controls2" id = "rotationFigurePanel">
@@ -214,9 +215,6 @@
         <br><br>
         <label>Число разбиений: <input type="number" id="numDivisions" value="10"></label>
         <br>
-        <button id="load-RotationFigure">Загрузить фигуру из файла</button>
-        <br>
-        <button id="save-RotationFigure">Сохранить фигуру в файл</button>
     </div>
 
 
