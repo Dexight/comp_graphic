@@ -2,11 +2,56 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
 let load_obj = document.getElementById('load-obj');
+let save_obj = document.getElementById('save-obj');
 let functionSelect = document.getElementById('function-select');
 let surfacePanel = document.getElementById('surfacePanel');
 let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
+let currentFigure = null;
+
+function saveFigureToFile() {
+    if (!currentFigure) {
+      alert("Нет фигуры для сохранения!");
+      return;
+    }
+    const objData = convertFigureToOBJ(currentFigure); 
+    const blob = new Blob([objData], { type: 'text/plain' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "figure.obj";  // Имя файла для сохранения
+    link.click();
+  }
+  
+  function convertFigureToOBJ(figure) {
+    if (!figure || !figure.vertices || !figure.faces) {
+      console.error("Невалидная фигура для конвертации в OBJ");
+      return "";
+    }
+  
+    let objData = "# OBJ файл, сгенерированный из фигуры\n";
+    
+    // Преобразуем вершины в формат OBJ (v x y z)
+    figure.vertices.forEach(vertex => {
+      if (Array.isArray(vertex) && vertex.length === 3) {
+        objData += `v ${vertex[0]} ${vertex[1]} ${vertex[2]}\n`;
+      } else {
+        console.error("Некорректная вершина:", vertex);
+      }
+    });
+  
+    // Преобразуем грани в формат OBJ (f v1 v2 v3)
+    figure.faces.forEach(face => {
+      if (Array.isArray(face)) {
+        // В OBJ индексы начинаются с 1, а не с 0, поэтому добавляем 1
+        objData += `f ${face.map(i => i + 1).join(' ')}\n`;
+      } else {
+        console.error("Некорректная грань:", face);
+      }
+    });
+  
+    return objData;
+  }
 
 //========7.2==========
 let formingPoints = [[1, 2, 3], [2, 0, 0], [3, 0, 0]];
@@ -714,10 +759,14 @@ function draw() {
     let showSurfacePanel = false;
     rotationFigurePanel.style.display = 'none';
     let showRotationFigurePanel = false;
+    load_obj.style.display = "none";
+    save_obj.style.display = "block";
+    
     switch(curFigure) {
-        case 0: 
+        case 0:  
             if (customFigure) {
                 figure = customFigure; 
+                load_obj.style.display = "block";
             } else {
                 return; 
             }
@@ -735,8 +784,12 @@ function draw() {
                 figure = {vertices: rf.vertices,faces: rf.faces};
                 showRotationFigurePanel = true;
                 break;
+        case 8: load_obj.style.display = "block";
+                save_obj.style.display = "none";
+                return;
         default: return;
     }
+    currentFigure = figure;
     
     drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
     if(figure.vertices!==undefined || figure.faces !==undefined){
@@ -842,7 +895,6 @@ function draw() {
 }
     surfacePanel.style.display = showSurfacePanel? 'flex':'none';
     rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
-    load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
 draw();
