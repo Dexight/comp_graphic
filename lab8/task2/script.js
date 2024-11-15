@@ -1,4 +1,6 @@
 const canvas = document.getElementById('canvas');
+const width = canvas.width;
+const height = canvas.height;
 const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
 let load_obj = document.getElementById('load-obj');
@@ -8,7 +10,12 @@ let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
 
-//========7.2==========
+//=======Z-buffer=======
+let zBuffer = Array(width * height).fill(Infinity);
+
+//======================
+
+//=========7.2==========
 let formingPoints = [[1, 2, 3], [2, 0, 0], [3, 0, 0]];
 let numDivisions = 10;
 let rotationAxis = 0;
@@ -160,6 +167,7 @@ functionSelect.addEventListener('change', (e) => {
     draw();
 });
 //=====================
+
 // Обработчик выбора фигуры из выпадающего списка
 figureSelect.addEventListener('change', (e) => {
     curFigure = parseInt(e.target.value);
@@ -760,9 +768,16 @@ function draw() {
         ctx.strokeStyle = 'black';
         ctx.beginPath();
         figure.faces.forEach(face => {
-            for (let i = 0; i < face.length; i++) {
+            // растеризовать если > 3 точек
+            
+            for (let i = 0; i < face.length; i++) 
+            {
+                //face[i].z
                 const [x1, y1] = transformedVertices[face[i]];
+
+                //(face[(i + 1) % face.length).z
                 const [x2, y2] = transformedVertices[face[(i + 1) % face.length]];
+                
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
             }
