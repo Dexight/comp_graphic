@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-evenly;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+        canvas {
+            border: 1px solid black;
+            margin-bottom: 5px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .controls label {
+            margin-bottom: 10px;
+        }
+        #figure-list {
+            display: flex;
+            justify-content: center;
+        }
+
+        .controls2{
+            border: double 5px lightgray;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .controls2 input{
+            text-align: center;
+            width: 30%;
+        }
+
+        #function-select{
+            text-align: center;
+        }
+
+        #load-obj{
+            margin-right: 8px;
+        }
+
+        #save-obj{
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas id="canvas" width="600" height="600"></canvas>
+        <div style="display: flex;">
+            <button id="load-obj">Загрузить из файла</button>
+            <button id="save-obj" onclick="saveFigureToFile()">Сохранить в файл</button>
+
+            <div id="figure-list">
+                <select id="figure-select">
+                    <option value="0" disabled selected>Выберите фигуру</option>
+                    <option value="1">Тетраэдр</option>
+                    <option value="2">Куб</option>
+                    <option value="3">Октаэдр</option>
+                    <option value="4">Икосаэдр</option>
+                    <option value="5">Додекаэдр</option>
+                    <option value="6">График</option>
+                    <option value="7">Фигура вращения</option>
+                    <option value="8">Загрузка фигуры</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <label>
+            Поворот по X: <input type="range" id="rotateX" min="0" max="360" step="1" value="0">
+        </label>
+        <label>
+            Поворот по Y: <input type="range" id="rotateY" min="0" max="360" step="1" value="0">
+        </label>
+        <label>
+            Поворот по Z: <input type="range" id="rotateZ" min="0" max="360" step="1" value="0">
+        </label>
+        <label>
+            Масштаб: <input type="range" id="scale" min="0.1" max="10" step="0.1" value="1">
+        </label>
+        <label>
+            <input type="checkbox" id="showVertices" checked> Вершины
+        </label>
+        <label>
+            <input type="checkbox" id="showEdges" checked> Грани
+        </label>
+        <label>
+            <input type="checkbox" id="showCube"> Отобразить куб
+        </label>
+        <label>
+            Смещение по x: <input type="number" id="translateX"  value = 0>
+        </label>
+        <label>
+            Смещение по y: <input type="number" id="translateY"  value = 0>
+        </label>
+        <label>
+            Смещение по z: <input type="number" id="translateZ"  value = 0>
+        </label>
+        <label>
+            <input type="checkbox" id="reflectXY"> Отражение относительно XY
+        </label>
+        <label>
+            <input type="checkbox" id="reflectXZ"> Отражение относительно XZ
+        </label>
+        <label>
+            <input type="checkbox" id="reflectYZ"> Отражение относительно YZ
+        </label>
+
+        <label>
+            Ax: <input type="number" id="AxInput"  value = 0>
+        </label>
+        <label>
+            Ay: <input type="number" id="AyInput"  value = 0>
+        </label>
+        <label>
+            Az: <input type="number" id="AzInput"  value = 0>
+        </label>
+        <label>
+            Bx: <input type="number" id="BxInput"  value = 0>
+        </label>
+        <label>
+            By: <input type="number" id="ByInput"  value = 0>
+        </label>
+        <label>
+            Bz: <input type="number" id="BzInput"  value = 0>
+        </label>
+        <label>
+            Угол поворота вокруг прямой: <input type="number" id="angleRotationLine"  value = 0>
+        </label>
+
+        <button id="perspectiveButton">Перспективная проекция</button>
+        <button id="axonometricButton">Аксонометрическая проекция</button>
+    </div>
+    <div class = "controls2" id = "surfacePanel">
+        <label>xMin</label>
+        <input type="number" id="surfaceXmin"  value = -1>
+
+        <br>
+
+        <label>xMax</label>
+        <input type="number" id="surfaceXmax"  value = 1>
+
+        <br><br>
+
+        <label>yMin</label>
+        <input type="number" id="surfaceYmin"  value = -1>
+
+        <br>
+
+        <label>yMax</label>
+        <input type="number" id="surfaceYmax"  value = 1>
+        
+        <br>
+
+        <label>Количество разбиений</label>
+        <input type="number" id="surfaceSegments"  value = 30>
+        
+        <br>
+
+        <label>Функция</label>
+        
+        <div id="functions-list">
+            <select id="function-select">
+                <option value="0" selected>x*y</option>
+                <option value="1">-√(x²+²y)</option>
+                <option value="2">x²+y²</option>
+                <option value="3">sin(x)*cos(y)</option>
+                <option value="4">sin(x)+cos(y)</option>
+                <option value="5">5*(cos(x²+y²+1)/(x²+y²+1)+0.1)</option>
+                <option value="6">сos(x²+y²)/(x²+y²+1)</option>
+            </select>
+        </div>
+        
+        <label>Коэфциент функции:</label>
+        <input type="number" id="Zcoef" min="-100" max="100" step="1" value="1">
+        
+        <br>
+        
+    </div>
+
+    <div class = "controls2" id = "rotationFigurePanel">
+        <label>Генерация фигуры вращения:</label>
+        <br>
+            Образующие точки(x1, y1, z1; x2, y2, z2; ...):<input type="text" id="formingPoints" value="1, 2, 3; 2, 0, 0; 3, 0, 0">
+        <br>
+        <label>Ось вращения: <select id="rotationAxis">
+            <option value="0">X</option>
+            <option value="1">Y</option>
+            <option value="2">Z</option>
+        </select></label>
+        <br><br>
+        <label>Число разбиений: <input type="number" id="numDivisions" value="10"></label>
+        <br>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
