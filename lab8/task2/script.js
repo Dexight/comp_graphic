@@ -11,8 +11,279 @@ let curFigure = 0;
 let curFunction = 0;
 
 //=======Z-buffer=======
-let zBuffer = Array(width * height).fill(Infinity);
 
+function Triangulation(triangles, face)
+{
+    for (let i = 0; i < face.length-2; i++) 
+    {
+        triangle = [
+                    [i],
+                    [i+1],
+                    [i+2] 
+                   ];
+        triangles.push(triangle);
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let zBuffer = Array(width * height).fill(Infinity);
+
+    let project = projectPerspective; 
+    if (currentProjection === 'axonometric') {
+        project = projectAxonometric;
+    } else {
+        project = projectPerspective;
+    }
+
+    const rotationX = getRotationXMatrix(rotateX);
+    const rotationY = getRotationYMatrix(rotateY);
+    const rotationZ = getRotationZMatrix(rotateZ);
+    const scaling = getScaleMatrix(scale);
+    const translating = getTranslationMatrix(translateX, translateY, translateZ)
+    reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
+    const RotateAroundLineMatrix  = getRotationAroundLineMatrix([Ax,Ay,Az], [Bx, By, Bz], angle);
+    if (document.getElementById("reflectXY").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
+    }
+    if (document.getElementById("reflectXZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXZMatrix());
+    }
+    if (document.getElementById("reflectYZ").checked) {
+        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionYZMatrix());
+    }
+
+    let figure;
+    let isCube = false;
+    surfacePanel.style.display = 'none';
+    let showSurfacePanel = false;
+    rotationFigurePanel.style.display = 'none';
+    let showRotationFigurePanel = false;
+    switch(curFigure) {
+        case 0: 
+            if (customFigure) {
+                figure = customFigure; 
+            } else {
+                return; 
+            }
+            break;
+        case 1: figure = tetrahedron; break;
+        case 2: figure = cube; isCube = true; break;
+        case 3: figure = octahedron; break;
+        case 4: figure = icosahedron; break;
+        case 5: figure = dodecahedron; break;
+        case 6: bs = buildSurface(); 
+                figure = {vertices: bs.surfaceVertices,faces: bs.surfaceFaces,}; 
+                showSurfacePanel = true; 
+                break;
+        case 7: rf = buildRotationFigure();
+                figure = {vertices: rf.vertices,faces: rf.faces};
+                showRotationFigurePanel = true;
+                break;
+        default: return;
+    }
+    
+    drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
+    if(figure.vertices!==undefined || figure.faces !==undefined)
+    {
+        const transformedVertices = figure.vertices.map(vertex => {
+                let point = [...vertex, 1];  
+                if(Ax !== Bx || Ay !== By || Az !== Bz)
+                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
+                point = multiplyMatrixAndPoint(rotationX, point);
+                point = multiplyMatrixAndPoint(rotationY, point);
+                point = multiplyMatrixAndPoint(rotationZ, point);
+                point = multiplyMatrixAndPoint(scaling, point);
+                point = multiplyMatrixAndPoint(translating, point);
+                point = multiplyMatrixAndPoint(reflectionMatrix, point);  
+                return project([point[0], point[1], point[2]]);
+            });
+
+        // рёбра
+        if (showEdges) 
+        {
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            figure.faces.forEach(face => {
+                // триангуляция если > 3 точек
+                triangles = [];
+                if (face.length > 3)
+                    Triangulation(triangles, face);
+                else { triangles.push(face); }
+
+                // растеризация
+                triangles.forEach(t => {
+                    testn = rasterizeTriangle(figure.vertices, t, zBuffer, width, height);
+                })
+                
+                const imageData = ctx.getImageData(0, 0, width, height);
+                pixels = imageData.data;
+
+                function setPixel(x, y, r, g, b, a) 
+                {
+                    const index = (y * canvas.width + x) * 4;
+                    pixels[index] = r;
+                    pixels[index + 1] = g;
+                    pixels[index + 2] = b;
+                    pixels[index + 3] = a;
+                }
+
+                for (let x = 0; x < width; x++)
+                {
+                    for (let y = 0; y < height; y++)
+                    {
+                        index = y * width + x;
+                        let res = zBuffer[index];
+                        if (res === Infinity) continue;
+                        else {setPixel(x, y, 0, 0, 0, 255);}
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+
+                // for (let i = 0; i < face.length; i++) 
+                // {
+                //     const [x1, y1] = transformedVertices[face[i]];
+
+                //     const [x2, y2] = transformedVertices[face[(i + 1) % face.length]];
+                    
+                //     ctx.moveTo(x1, y1);
+                //     ctx.lineTo(x2, y2);
+                // }
+            });
+            //ctx.stroke();
+        }
+
+        // вершины
+        if (showVertices) {
+            ctx.fillStyle = 'red';
+            transformedVertices.forEach(([x, y]) => {
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // отображение куба
+        if (showCube && !isCube) {
+            const transformedVerticesCube = cube.vertices.map(vertex => {
+                let point = [...vertex, 1];
+                if(Ax !== Bx || Ay !== By || Az !== Bz)
+                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);  
+                point = multiplyMatrixAndPoint(rotationX, point);
+                point = multiplyMatrixAndPoint(rotationY, point);
+                point = multiplyMatrixAndPoint(rotationZ, point);
+                point = multiplyMatrixAndPoint(scaling, point);
+                point = multiplyMatrixAndPoint(translating, point);
+                point = multiplyMatrixAndPoint(reflectionMatrix, point);
+                return project([point[0], point[1], point[2]]);
+            });
+
+            ctx.strokeStyle = 'pink';
+            ctx.beginPath();
+            cube.faces.forEach(face => {
+                for (let i = 0; i < face.length; i++) {
+                    const [x1, y1] = transformedVerticesCube[face[i]];
+                    const [x2, y2] = transformedVerticesCube[face[(i + 1) % face.length]];
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                }
+            });
+            ctx.stroke();
+        }
+
+        //TEST
+        if (showXYZ)
+        {
+            const transformedXYZ = xyz.vertices.map(vertex => {
+                let point = [...vertex, 1];
+                if(Ax !== Bx || Ay !== By || Az !== Bz)
+                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
+                point = multiplyMatrixAndPoint(rotationX, point);
+                point = multiplyMatrixAndPoint(rotationY, point);
+                point = multiplyMatrixAndPoint(rotationZ, point);
+                point = multiplyMatrixAndPoint(scaling, point);
+                point = multiplyMatrixAndPoint(translating, point);
+                point = multiplyMatrixAndPoint(reflectionMatrix, point);
+                if(Ax !== Bx && Ay !== By && Az !== Bz)
+                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
+                return project([point[0], point[1], point[2]]);
+            });
+
+            styles = ['red', 'lightgreen', 'blue'];
+            let n_style = 0;
+            xyz.faces.forEach(face => {
+                ctx.beginPath();
+                ctx.strokeStyle = styles[n_style];
+                const [x1, y1] = transformedXYZ[face[0]];
+                const [x2, y2] = transformedXYZ[face[1]];
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                n_style++;
+            });
+        }
+    }
+    surfacePanel.style.display = showSurfacePanel? 'flex':'none';
+    rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
+    load_obj.style.display = showSurfacePanel? 'none' : 'inline'
+}
+
+function rasterizeTriangle(v, triangle, zBuffer, width, height) {
+    n = 0;
+    const v0 = v[triangle[0]];
+    const v1 = v[triangle[1]];
+    const v2 = v[triangle[2]];
+
+    // Упорядочиваем вершины по y (y0 <= y1 <= y2)
+    const vertices = [v0, v1, v2].sort((a, b) => a[1] - b[1]);
+    const [[x0s, y0s, z0s], [x1s, y1s, z1s], [x2s, y2s, z2s]] = vertices;
+
+    // Растеризация верхнего и нижнего треугольника
+    const fillFlatTriangle = (xStart, yStart, zStart, xEnd, yEnd, zEnd, xTip, yTip, zTip) => {
+        const invSlope1 = (xEnd - xStart) / (yEnd - yStart || 1);
+        const invSlope2 = (xTip - xStart) / (yTip - yStart || 1);
+        let zSlope1 = (zEnd - zStart) / (yEnd - yStart || 1);
+        let zSlope2 = (zTip - zStart) / (yTip - yStart || 1);
+
+        let curX1 = xStart;
+        let curX2 = xStart;
+        let curZ1 = zStart;
+        let curZ2 = zStart;
+
+        for (let y = Math.ceil(yStart); y <= Math.ceil(yEnd); y++) {
+            if (y < 0 || y >= height) continue; // Игнорируем координаты вне экрана
+
+            const startX = Math.ceil(curX1);
+            const endX = Math.ceil(curX2);
+            let z = curZ1;
+
+            const zStep = (curZ2 - curZ1) / (endX - startX || 1);
+
+            for (let x = startX; x <= endX; x++) {
+                if (x < 0 || x >= width) continue; // Игнорируем координаты вне экрана
+                const index = y * width + x;
+
+                if (z < zBuffer[index]) //обновляем буфер
+                    {zBuffer[index] = z; n++;}
+
+                z += zStep;
+            }
+
+            curX1 += invSlope1;
+            curX2 += invSlope2;
+            curZ1 += zSlope1;
+            curZ2 += zSlope2;
+        }
+    };
+
+    // Обрабатываем нижний треугольник
+    fillFlatTriangle(x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s);
+
+    // Обрабатываем верхний треугольник
+    fillFlatTriangle(x1s, y1s, z1s, x2s, y2s, z2s, x0s, y0s, z0s);
+    return n;
+}
 //======================
 
 //=========7.2==========
@@ -687,177 +958,6 @@ function drawLine(point1, point2, color){
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.stroke();
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    let project = projectPerspective; 
-    if (currentProjection === 'axonometric') {
-        project = projectAxonometric;
-    } else {
-        project = projectPerspective;
-    }
-
-    const rotationX = getRotationXMatrix(rotateX);
-    const rotationY = getRotationYMatrix(rotateY);
-    const rotationZ = getRotationZMatrix(rotateZ);
-    const scaling = getScaleMatrix(scale);
-    const translating = getTranslationMatrix(translateX, translateY, translateZ)
-    reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
-    const RotateAroundLineMatrix  = getRotationAroundLineMatrix([Ax,Ay,Az], [Bx, By, Bz], angle);
-    if (document.getElementById("reflectXY").checked) {
-        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
-    }
-    if (document.getElementById("reflectXZ").checked) {
-        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXZMatrix());
-    }
-    if (document.getElementById("reflectYZ").checked) {
-        reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionYZMatrix());
-    }
-
-    let figure;
-    let isCube = false;
-    surfacePanel.style.display = 'none';
-    let showSurfacePanel = false;
-    rotationFigurePanel.style.display = 'none';
-    let showRotationFigurePanel = false;
-    switch(curFigure) {
-        case 0: 
-            if (customFigure) {
-                figure = customFigure; 
-            } else {
-                return; 
-            }
-            break;
-        case 1: figure = tetrahedron; break;
-        case 2: figure = cube; isCube = true; break;
-        case 3: figure = octahedron; break;
-        case 4: figure = icosahedron; break;
-        case 5: figure = dodecahedron; break;
-        case 6: bs = buildSurface(); 
-                figure = {vertices: bs.surfaceVertices,faces: bs.surfaceFaces,}; 
-                showSurfacePanel = true; 
-                break;
-        case 7: rf = buildRotationFigure();
-                figure = {vertices: rf.vertices,faces: rf.faces};
-                showRotationFigurePanel = true;
-                break;
-        default: return;
-    }
-    
-    drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
-    if(figure.vertices!==undefined || figure.faces !==undefined){
-        const transformedVertices = figure.vertices.map(vertex => {
-                let point = [...vertex, 1];  
-                if(Ax !== Bx || Ay !== By || Az !== Bz)
-                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
-                point = multiplyMatrixAndPoint(rotationX, point);
-                point = multiplyMatrixAndPoint(rotationY, point);
-                point = multiplyMatrixAndPoint(rotationZ, point);
-                point = multiplyMatrixAndPoint(scaling, point);
-                point = multiplyMatrixAndPoint(translating, point);
-                point = multiplyMatrixAndPoint(reflectionMatrix, point);  
-                return project([point[0], point[1], point[2]]);
-            });
-    
-    
-
-    // рёбра
-    if (showEdges) {
-        ctx.strokeStyle = 'black';
-        ctx.beginPath();
-        figure.faces.forEach(face => {
-            // растеризовать если > 3 точек
-            
-            for (let i = 0; i < face.length; i++) 
-            {
-                //face[i].z
-                const [x1, y1] = transformedVertices[face[i]];
-
-                //(face[(i + 1) % face.length).z
-                const [x2, y2] = transformedVertices[face[(i + 1) % face.length]];
-                
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-            }
-        });
-        ctx.stroke();
-    }
-
-    // вершины
-    if (showVertices) {
-        ctx.fillStyle = 'red';
-        transformedVertices.forEach(([x, y]) => {
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
-
-    // отображение куба
-    if (showCube && !isCube) {
-        const transformedVerticesCube = cube.vertices.map(vertex => {
-            let point = [...vertex, 1];
-            if(Ax !== Bx || Ay !== By || Az !== Bz)
-                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);  
-            point = multiplyMatrixAndPoint(rotationX, point);
-            point = multiplyMatrixAndPoint(rotationY, point);
-            point = multiplyMatrixAndPoint(rotationZ, point);
-            point = multiplyMatrixAndPoint(scaling, point);
-            point = multiplyMatrixAndPoint(translating, point);
-            point = multiplyMatrixAndPoint(reflectionMatrix, point);
-            return project([point[0], point[1], point[2]]);
-        });
-
-        ctx.strokeStyle = 'pink';
-        ctx.beginPath();
-        cube.faces.forEach(face => {
-            for (let i = 0; i < face.length; i++) {
-                const [x1, y1] = transformedVerticesCube[face[i]];
-                const [x2, y2] = transformedVerticesCube[face[(i + 1) % face.length]];
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-            }
-        });
-        ctx.stroke();
-    }
-
-    //TEST
-    if (showXYZ)
-    {
-        const transformedXYZ = xyz.vertices.map(vertex => {
-            let point = [...vertex, 1];
-            if(Ax !== Bx || Ay !== By || Az !== Bz)
-                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
-            point = multiplyMatrixAndPoint(rotationX, point);
-            point = multiplyMatrixAndPoint(rotationY, point);
-            point = multiplyMatrixAndPoint(rotationZ, point);
-            point = multiplyMatrixAndPoint(scaling, point);
-            point = multiplyMatrixAndPoint(translating, point);
-            point = multiplyMatrixAndPoint(reflectionMatrix, point);
-            if(Ax !== Bx && Ay !== By && Az !== Bz)
-                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);
-            return project([point[0], point[1], point[2]]);
-        });
-
-        styles = ['red', 'lightgreen', 'blue'];
-        let n_style = 0;
-        xyz.faces.forEach(face => {
-            ctx.beginPath();
-            ctx.strokeStyle = styles[n_style];
-            const [x1, y1] = transformedXYZ[face[0]];
-            const [x2, y2] = transformedXYZ[face[1]];
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-            n_style++;
-        });
-    }
-}
-    surfacePanel.style.display = showSurfacePanel? 'flex':'none';
-    rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
-    load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
 draw();
