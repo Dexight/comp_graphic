@@ -855,18 +855,25 @@ function draw() {
             ctx.beginPath();
             figure.faces.forEach(face => {
                 const triangles = triangulateFace(face);
+                let faceVisible = false;
                 triangles.forEach(triangle => {
                     const [v1, v2, v3] = triangle.map(index => transformedVertices[index]);
                     const normal = calculateNormal(v1, v2, v3);
                     const cosAngle = cosAngleBetween(normal, viewVector);
 
                     if (cosAngle < 0) { // Отсечение нелицевых граней
-                        ctx.moveTo(v1[0], v1[1]);
-                        ctx.lineTo(v2[0], v2[1]);
-                        ctx.lineTo(v3[0], v3[1]);
-                        ctx.closePath();
+                        faceVisible = true;
                     }
                 });
+
+                if (faceVisible) {
+                    const vertices = face.map(index => transformedVertices[index]);
+                    ctx.moveTo(vertices[0][0], vertices[0][1]);
+                    for (let i = 1; i < vertices.length; i++) {
+                        ctx.lineTo(vertices[i][0], vertices[i][1]);
+                    }
+                    ctx.closePath();
+                }
             });
             ctx.stroke();
         }
@@ -899,12 +906,12 @@ function draw() {
             ctx.strokeStyle = 'pink';
             ctx.beginPath();
             cube.faces.forEach(face => {
-                for (let i = 0; i < face.length; i++) {
-                    const [x1, y1] = transformedVerticesCube[face[i]];
-                    const [x2, y2] = transformedVerticesCube[face[(i + 1) % face.length]];
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
+                const vertices = face.map(index => transformedVerticesCube[index]);
+                ctx.moveTo(vertices[0][0], vertices[0][1]);
+                for (let i = 1; i < vertices.length; i++) {
+                    ctx.lineTo(vertices[i][0], vertices[i][1]);
                 }
+                ctx.closePath();
             });
             ctx.stroke();
         }
