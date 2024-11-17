@@ -17,9 +17,9 @@ function Triangulation(triangles, face)
     for (let i = 0; i < face.length-2; i++) 
     {
         triangle = [
-                    [i],
-                    [i+1],
-                    [i+2] 
+                    face[0],
+                    face[i+1],
+                    face[i+2] 
                    ];
         triangles.push(triangle);
     }
@@ -83,7 +83,7 @@ function draw() {
         default: return;
     }
     
-    drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
+    //drawLine([Ax, Ay, Az], [Bx, By, Bz], 'yellow');
     if(figure.vertices!==undefined || figure.faces !==undefined)
     {
         const transformedVertices = figure.vertices.map(vertex => {
@@ -98,12 +98,11 @@ function draw() {
                 point = multiplyMatrixAndPoint(reflectionMatrix, point);  
                 return project([point[0], point[1], point[2]]);
             });
-
+        
         // рёбра
+        all_triangles = [];
         if (showEdges) 
         {
-            ctx.strokeStyle = 'black';
-            ctx.beginPath();
             figure.faces.forEach(face => {
                 // триангуляция если > 3 точек
                 triangles = [];
@@ -113,33 +112,12 @@ function draw() {
 
                 // растеризация
                 triangles.forEach(t => {
-                    testn = rasterizeTriangle(figure.vertices, t, zBuffer, width, height);
+                    all_triangles.push(t);
+                    projected_t = [[transformedVertices[t[0]][0], transformedVertices[t[0]][1], transformedVertices[t[0]][2]],
+                                   [transformedVertices[t[1]][0], transformedVertices[t[1]][1], transformedVertices[t[1]][2]], 
+                                   [transformedVertices[t[2]][0], transformedVertices[t[2]][1], transformedVertices[t[2]][2]]];
+                    testn = rasterizeTriangle(projected_t, zBuffer, width, height);
                 })
-                
-                const imageData = ctx.getImageData(0, 0, width, height);
-                pixels = imageData.data;
-
-                function setPixel(x, y, r, g, b, a) 
-                {
-                    const index = (y * canvas.width + x) * 4;
-                    pixels[index] = r;
-                    pixels[index + 1] = g;
-                    pixels[index + 2] = b;
-                    pixels[index + 3] = a;
-                }
-
-                for (let x = 0; x < width; x++)
-                {
-                    for (let y = 0; y < height; y++)
-                    {
-                        index = y * width + x;
-                        let res = zBuffer[index];
-                        if (res === Infinity) continue;
-                        else {setPixel(x, y, 0, 0, 0, 255);}
-                    }
-                }
-
-                ctx.putImageData(imageData, 0, 0);
 
                 // for (let i = 0; i < face.length; i++) 
                 // {
@@ -151,8 +129,24 @@ function draw() {
                 //     ctx.lineTo(x2, y2);
                 // }
             });
-            //ctx.stroke();
         }
+
+        renderDepthBuffer(zBuffer);
+
+        //отображение триангуляции
+        ctx.strokeStyle = 'pink';
+        ctx.beginPath();
+        all_triangles.forEach(t=>{
+            for (let i = 0; i < t.length; i++)
+            {
+                const [x1, y1] = transformedVertices[t[i]];
+                const [x2, y2] = transformedVertices[t[(i + 1) % t.length]];
+                
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+            }
+        ctx.stroke();
+        })
 
         // вершины
         if (showVertices) {
@@ -229,11 +223,11 @@ function draw() {
     load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
-function rasterizeTriangle(v, triangle, zBuffer, width, height) {
+function rasterizeTriangle(triangle, zBuffer, width, height) {
     n = 0;
-    const v0 = v[triangle[0]];
-    const v1 = v[triangle[1]];
-    const v2 = v[triangle[2]];
+    const v0 = triangle[0];
+    const v1 = triangle[1];
+    const v2 = triangle[2];
 
     // Упорядочиваем вершины по y (y0 <= y1 <= y2)
     const vertices = [v0, v1, v2].sort((a, b) => a[1] - b[1]);
@@ -251,7 +245,9 @@ function rasterizeTriangle(v, triangle, zBuffer, width, height) {
         let curZ1 = zStart;
         let curZ2 = zStart;
 
-        for (let y = Math.ceil(yStart); y <= Math.ceil(yEnd); y++) {
+        for (let y = Math.ceil(yStart); y <= Math.ceil(yEnd); y++) {//округляем y и x чтобы однозначно вычислять индекс буфера
+
+
             if (y < 0 || y >= height) continue; // Игнорируем координаты вне экрана
 
             const startX = Math.ceil(curX1);
@@ -261,7 +257,9 @@ function rasterizeTriangle(v, triangle, zBuffer, width, height) {
             const zStep = (curZ2 - curZ1) / (endX - startX || 1);
 
             for (let x = startX; x <= endX; x++) {
+
                 if (x < 0 || x >= width) continue; // Игнорируем координаты вне экрана
+
                 const index = y * width + x;
 
                 if (z < zBuffer[index]) //обновляем буфер
@@ -283,6 +281,51 @@ function rasterizeTriangle(v, triangle, zBuffer, width, height) {
     // Обрабатываем верхний треугольник
     fillFlatTriangle(x1s, y1s, z1s, x2s, y2s, z2s, x0s, y0s, z0s);
     return n;
+}
+
+function renderDepthBuffer(zBuffer) 
+{
+    // Найти минимальное и максимальное значение в Z-буфере
+    let minZ = Infinity, maxZ = -Infinity;
+    for (let z of zBuffer) {
+        if (z < minZ && z !== Infinity) minZ = z;
+        if (z > maxZ && z !== Infinity) maxZ = z;
+    }
+    
+    // Если буфер пуст, заполнить серым цветом
+    if (minZ === Infinity || maxZ === -Infinity) {
+        ctx.fillStyle = "rgb(128, 128, 128)";
+        ctx.fillRect(0, 0, width, height);
+        return;
+    }
+
+    // Массив для хранения данных изображения
+    const imageData = ctx.createImageData(width, height);
+    const data = imageData.data;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = y * width + x;
+            const z = zBuffer[index];
+
+            // Если пиксель не был изменен, закрасить его серым цветом
+            let shade = 128; // Средний серый
+            if (z !== Infinity) {
+                // Линейная интерполяция оттенка серого
+                shade = Math.floor(((z - minZ) / (maxZ - minZ)) * 255);
+            }
+
+            // Заполнить RGBA
+            const pixelIndex = (y * width + x) * 4;
+            data[pixelIndex] = shade;        // Red
+            data[pixelIndex + 1] = shade;    // Green
+            data[pixelIndex + 2] = shade;    // Blue
+            data[pixelIndex + 3] = 255;      // Alpha
+        }
+    }
+
+    // Нарисовать изображение на холсте
+    ctx.putImageData(imageData, 0, 0);
 }
 //======================
 
@@ -850,14 +893,14 @@ function getRotationAroundLineMatrix(point0, point1, angle){
     ];
 }
 
-function projectPerspective(point) {
+function projectPerspective(point) {//
     const c = 3; 
     const scale = 100;
 
     const perspectiveMatrix = [
         [scale, 0, 0, 0],
         [0, -scale, 0, 0], // -scale для инверсии Y
-        [0, 0, 1, 0], 
+        [0, 0, scale, 0], 
         [0, 0, -1 / c, 1]
     ];
 
@@ -869,7 +912,7 @@ function projectPerspective(point) {
     return [
         (x / adjustedW) + canvas.width / 2, 
         (y / adjustedW) + canvas.height / 2,  
-        0, 
+        z/adjustedW, 
         1
     ];
 }
