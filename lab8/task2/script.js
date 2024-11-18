@@ -98,8 +98,10 @@ function draw() {
                 return project([point[0], point[1], point[2]]);
             });
         
-        // рёбра
+        // грани
         all_triangles = [];
+        let minZ = Infinity;
+        let maxZ = -Infinity;
         figure.faces.forEach(face => {
             // триангуляция если > 3 точек
             triangles = [];
@@ -113,13 +115,13 @@ function draw() {
                 projected_t = [[transformedVertices[t[0]][0], transformedVertices[t[0]][1], transformedVertices[t[0]][2]],
                                 [transformedVertices[t[1]][0], transformedVertices[t[1]][1], transformedVertices[t[1]][2]], 
                                 [transformedVertices[t[2]][0], transformedVertices[t[2]][1], transformedVertices[t[2]][2]]];
-                testn = rasterizeTriangle(projected_t, zBuffer, width, height);
+                [minZ, maxZ] = rasterizeTriangle(projected_t, zBuffer, width, height, minZ, maxZ);
             })
         });
 
-        renderDepthBuffer(zBuffer);
+        renderDepthBuffer(zBuffer, minZ.toFixed(5), maxZ.toFixed(5));
 
-        //отображение триангуляции
+        // отображение триангуляции
         if (showEdges)
         {
             ctx.strokeStyle = 'pink';
@@ -135,9 +137,11 @@ function draw() {
                 }
             ctx.stroke();
             })
-            }
+        }
+
         // вершины
-        if (showVertices) {
+        if (showVertices) 
+        {
             ctx.fillStyle = 'red';
             transformedVertices.forEach(([x, y]) => {
                 ctx.beginPath();
@@ -145,6 +149,7 @@ function draw() {
                 ctx.fill();
             });
         }
+
         // XYZ
         if (showXYZ)
         {
@@ -182,8 +187,8 @@ function draw() {
     load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
-function rasterizeTriangle(triangle, zBuffer, width, height) {
-    n = 0
+function rasterizeTriangle(triangle, zBuffer, width, height, minZ, maxZ) 
+{
     const [v0, v1, v2] = triangle; // Три вершины треугольника (x, y, z)
 
     // Сортировка по Y-координате для упрощения
@@ -193,18 +198,22 @@ function rasterizeTriangle(triangle, zBuffer, width, height) {
     const yMin = Math.max(Math.ceil(p0[1]), 0);
     const yMax = Math.min(Math.floor(p2[1]), height - 1);
 
-    for (let y = yMin; y <= yMax; y++) {
+    for (let y = yMin; y <= yMax; y++) 
+    {
         // Интерполяция X-координат и Z для текущей строки
         let xStart, xEnd, zStart, zEnd;
 
-        if (y < p1[1]) { // Верхняя половина треугольника
+        if (y < p1[1]) // Верхняя половина треугольника 
+        { 
             const t0 = (y - p0[1]) / (p1[1] - p0[1]);
             const t1 = (y - p0[1]) / (p2[1] - p0[1]);
             xStart = lerp(p0[0], p1[0], t0);
             zStart = lerp(p0[2], p1[2], t0);
             xEnd = lerp(p0[0], p2[0], t1);
             zEnd = lerp(p0[2], p2[2], t1);
-        } else { // Нижняя половина треугольника
+        }
+        else // Нижняя половина треугольника
+        { 
             const t0 = (y - p1[1]) / (p2[1] - p1[1]);
             const t1 = (y - p0[1]) / (p2[1] - p0[1]);
             xStart = lerp(p1[0], p2[0], t0);
@@ -214,7 +223,8 @@ function rasterizeTriangle(triangle, zBuffer, width, height) {
         }
 
         // Обеспечение порядка X
-        if (xStart > xEnd) {
+        if (xStart > xEnd) 
+        {
             [xStart, xEnd] = [xEnd, xStart];
             [zStart, zEnd] = [zEnd, zStart];
         }
@@ -223,7 +233,8 @@ function rasterizeTriangle(triangle, zBuffer, width, height) {
         const xMin = Math.max(Math.ceil(xStart), 0);
         const xMax = Math.min(Math.floor(xEnd), width - 1);
 
-        for (let x = xMin; x <= xMax; x++) {
+        for (let x = xMin; x <= xMax; x++) 
+        {
             // Интерполяция Z
             const t = (x - xStart) / (xEnd - xStart);
             const z = lerp(zStart, zEnd, t);
@@ -232,33 +243,28 @@ function rasterizeTriangle(triangle, zBuffer, width, height) {
             const index = Math.floor(y) * width + Math.floor(x);
 
             // Обновление Z-буфера, если пиксель ближе
-            if (z > zBuffer[index]) {
+            if (z > zBuffer[index]) 
+            {
                 zBuffer[index] = z;
-                n++;
-                // Дополнительно можно рисовать пиксель (опционально)
-                ctx.fillStyle = `rgb(${Math.floor((1 - z) * 255)}, ${Math.floor((1 - z) * 255)}, ${Math.floor((1 - z) * 255)})`;
-                ctx.fillRect(x, y, 1, 1);
             }
+
+            // Обновление z границ;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
         }
     }
+
+    return [minZ, maxZ];
 }
 
 // Линейная интерполяция
-function lerp(a, b, t) {
-    return a + t * (b - a);
-}
+function lerp(a, b, t) { return a + t * (b - a); }
 
-function renderDepthBuffer(zBuffer) 
-{
-    // Найти минимальное и максимальное значение в Z-буфере
-    let minZ = -Infinity, maxZ = Infinity;
-    for (let z of zBuffer) {
-        if (z > minZ && z !== -Infinity) minZ = z.toFixed(5);
-        if (z < maxZ && z !== -Infinity) maxZ = z.toFixed(5);
-    }
-    
+function renderDepthBuffer(zBuffer, minZ, maxZ) 
+{    
     // Если буфер пуст, заполнить серым цветом
-    if (minZ === -Infinity || maxZ === Infinity) {
+    if (minZ === -Infinity || maxZ === Infinity) 
+    {
         ctx.fillStyle = "rgb(128, 128, 128)";
         ctx.fillRect(0, 0, width, height);
         return;
@@ -268,13 +274,16 @@ function renderDepthBuffer(zBuffer)
     const imageData = ctx.createImageData(width, height);
     const data = imageData.data;
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) 
+    {
+        for (let x = 0; x < width; x++) 
+        {
             const index = y * width + x;
             const z = zBuffer[index];
             
             let shade = 128; // Если пиксель не был изменен, закрасить его серым цветом
-            if (z !== -Infinity) {
+            if (z !== -Infinity) 
+            {
                 // Линейная интерполяция оттенка серого
                 shade = Math.floor(((z.toFixed(5) - minZ) / (maxZ - minZ)) * 255);
             }
