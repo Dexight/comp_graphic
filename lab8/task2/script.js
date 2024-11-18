@@ -897,7 +897,7 @@ function projectAxonometric(point) {
     return [
         x * scale + canvas.width / 2,
         canvas.height / 2 - y * scale, // Инвертируем Y
-        0,
+        z,
         1
     ];
 }
