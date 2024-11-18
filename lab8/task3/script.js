@@ -617,22 +617,67 @@ function getRotationAroundLineMatrix(point0, point1, angle){
 }
 //------------8.3---------------------------
 let cameraX = 0, cameraY = 0, cameraZ = -5; // координаты камеры
-let cameraAngleRotationX = 0, cameraAngleRotationY = 0, cameraAngleRotationZ = 0; // углы поворота камеры  
+let cameraAngleRotationX = 0, cameraAngleRotationY = 45, cameraAngleRotationZ = 0; // углы поворота камеры  
 let cameraRotationSpeed = 0.01; // скорость вращения камеры
 
-//Матрица камеры с заданными параметрами
-function getCameraMatrix(){
-    const rotationX = getRotationXMatrix(cameraAngleRotationX);
-    const rotationY = getRotationYMatrix(cameraAngleRotationY);
-    const rotationZ = getRotationZMatrix(cameraAngleRotationZ);
-
-    //Центрируем камеру
-    const translation = getTranslationMatrix(cameraX, cameraY, cameraZ);
-    // берем результрующую матрицу для камеры
-    return(multiplyMatrices(multiplyMatrices(rotationX, rotationY), 
-           multiplyMatrices(rotationZ, translation)));
+function normalize(vector){
+    const length = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+    return vector.map(v => v / length);
 }
 
+function dotProduct(a, b) {
+    return a.reduce((sum, ai, i) => sum + ai * b[i], 0);
+}
+
+function crossProduct(a, b) {
+    return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+    ];
+}
+
+function getLookAtMatrix(cameraPos, target, up){
+    const [cx, cy, cz] = cameraPos;
+    const [tx, ty, tz] = target;
+    // const [ux, uy, uz] = up;
+
+    const forwardVector = normalize([tx - cx, ty - cy, tz - cz]);
+    const rightHandVector = normalize(crossProduct(forwardVector, up));
+    const newUpVector = crossProduct(rightHandVector,forwardVector);
+
+    return [
+        [rightHandVector[0], newUpVector[0], -forwardVector[0], 0],
+        [rightHandVector[1], newUpVector[1], -forwardVector[1], 0],
+        [rightHandVector[2], newUpVector[2], -forwardVector[2], 0],
+        [
+            -dotProduct(rightHandVector, cameraPos),
+            -dotProduct(newUpVector, cameraPos),
+            dotProduct(forwardVector, cameraPos),
+            1
+        ]
+    ];
+}
+
+function getCameraMatrix() {
+    let cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+    //новая позиция повернутой камеры
+    const newCameraX = cameraRadius * Math.cos(cameraAngleRotationY) * Math.cos(cameraAngleRotationX);
+    const newCameraY = cameraRadius * Math.sin(cameraAngleRotationX);
+    const newCameraZ = cameraRadius * Math.sin(cameraAngleRotationY) * Math.cos(cameraAngleRotationX);
+
+    const cameraPosition = [newCameraX, newCameraY, newCameraZ]; // Новая позиция камеры
+
+    const upVector = [0, 1, 0]; // Вектор "вверх"
+
+    // Матрица lookAt, чтобы камера смотрела на центр сцены (0, 0, 0)
+    const lookAtMatrix = getLookAtMatrix(cameraPosition, [0, 0, 0], upVector);
+
+    return lookAtMatrix;
+}
+
+
+//------------8.3---------------------------
 
 function projectPerspective(point) {
     const c = 3; 
@@ -762,7 +807,7 @@ function draw() {
     reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
     const RotateAroundLineMatrix  = getRotationAroundLineMatrix([Ax,Ay,Az], [Bx, By, Bz], angle);
     const cameraMatrix = getCameraMatrix();
-
+    console.log('camera position: ', [cameraX, cameraY, cameraZ]);
     if (document.getElementById("reflectXY").checked) {
         reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
     }
@@ -920,7 +965,10 @@ function draw() {
 }
 
 function animate() {
-    cameraAngleRotationY += cameraRotationSpeed; // Вращаем вокруг Y
+    cameraAngleRotationY += cameraRotationSpeed; // вращение камеры вокруг Y-оси
+    cameraAngleRotationX += cameraRotationSpeed * 0.5; // вращение камеры вокруг X-оси (меньше скорости)
+    if (cameraAngleRotationX > Math.PI / 2) cameraAngleRotationX = Math.PI / 2; // Ограничиваем угол, чтобы не "перевернуть" камеру
+    if (cameraAngleRotationX < -Math.PI / 2) cameraAngleRotationX = -Math.PI / 2; // Ограничиваем угол
     draw();
     requestAnimationFrame(animate);
 }
