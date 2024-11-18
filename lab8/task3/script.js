@@ -615,6 +615,24 @@ function getRotationAroundLineMatrix(point0, point1, angle){
         [0,0,0,1]
     ];
 }
+//------------8.3---------------------------
+let cameraX = 0, cameraY = 0, cameraZ = -5; // координаты камеры
+let cameraAngleRotationX = 0, cameraAngleRotationY = 0, cameraAngleRotationZ = 0; // углы поворота камеры  
+let cameraRotationSpeed = 0.01;
+
+//Матрица камеры с заданными параметрами
+function getCameraMatrix(){
+    const rotationX = getRotationXMatrix(cameraAngleRotationX);
+    const rotationY = getRotationYMatrix(cameraAngleRotationY);
+    const rotationZ = getRotationZMatrix(cameraAngleRotationZ);
+
+    //Центрируем камеру
+    const translation = getTranslationMatrix(cameraX, cameraY, cameraZ);
+    // берем результрующую матрицу для камеры
+    return(multiplyMatrices(multiplyMatrices(rotationX, rotationY), 
+           multiplyMatrices(rotationZ, translation)));
+}
+
 
 function projectPerspective(point) {
     const c = 3; 
