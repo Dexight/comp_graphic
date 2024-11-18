@@ -618,7 +618,7 @@ function getRotationAroundLineMatrix(point0, point1, angle){
 //------------8.3---------------------------
 let cameraX = 0, cameraY = 0, cameraZ = -5; // координаты камеры
 let cameraAngleRotationX = 0, cameraAngleRotationY = 0, cameraAngleRotationZ = 0; // углы поворота камеры  
-let cameraRotationSpeed = 0.01;
+let cameraRotationSpeed = 0.01; // скорость вращения камеры
 
 //Матрица камеры с заданными параметрами
 function getCameraMatrix(){
@@ -761,6 +761,8 @@ function draw() {
     const translating = getTranslationMatrix(translateX, translateY, translateZ)
     reflectionMatrix = getReflectionMatrix() // получаем "чистую" матрицу отражения
     const RotateAroundLineMatrix  = getRotationAroundLineMatrix([Ax,Ay,Az], [Bx, By, Bz], angle);
+    const cameraMatrix = getCameraMatrix();
+
     if (document.getElementById("reflectXY").checked) {
         reflectionMatrix = multiplyMatrices(reflectionMatrix, getReflectionXYMatrix());
     }
@@ -821,6 +823,8 @@ function draw() {
                 point = multiplyMatrixAndPoint(scaling, point);
                 point = multiplyMatrixAndPoint(translating, point);
                 point = multiplyMatrixAndPoint(reflectionMatrix, point);  
+                point = multiplyMatrixAndPoint(cameraMatrix, point);
+
                 return project([point[0], point[1], point[2]]);
             });
     
@@ -915,4 +919,11 @@ function draw() {
     rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
 }
 
-draw();
+function animate() {
+    cameraAngleRotationY += cameraRotationSpeed; // Вращаем вокруг Y
+    draw();
+    requestAnimationFrame(animate);
+}
+animate();
+
+// draw();
