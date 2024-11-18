@@ -27,7 +27,7 @@ function Triangulation(triangles, face)
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let zBuffer = Array(width * height).fill(Infinity);
+    let zBuffer = Array(width * height).fill(-Infinity);
 
     let project = projectPerspective; 
     if (currentProjection === 'axonometric') {
@@ -54,7 +54,6 @@ function draw() {
     }
 
     let figure;
-    let isCube = false;
     surfacePanel.style.display = 'none';
     let showSurfacePanel = false;
     rotationFigurePanel.style.display = 'none';
@@ -68,7 +67,7 @@ function draw() {
             }
             break;
         case 1: figure = tetrahedron; break;
-        case 2: figure = cube; isCube = true; break;
+        case 2: figure = cube;break;
         case 3: figure = octahedron; break;
         case 4: figure = icosahedron; break;
         case 5: figure = dodecahedron; break;
@@ -101,53 +100,42 @@ function draw() {
         
         // рёбра
         all_triangles = [];
-        if (showEdges) 
-        {
-            figure.faces.forEach(face => {
-                // триангуляция если > 3 точек
-                triangles = [];
-                if (face.length > 3)
-                    Triangulation(triangles, face);
-                else { triangles.push(face); }
+        figure.faces.forEach(face => {
+            // триангуляция если > 3 точек
+            triangles = [];
+            if (face.length > 3)
+                Triangulation(triangles, face);
+            else { triangles.push(face); }
 
-                // растеризация
-                triangles.forEach(t => {
-                    all_triangles.push(t);
-                    projected_t = [[transformedVertices[t[0]][0], transformedVertices[t[0]][1], transformedVertices[t[0]][2]],
-                                   [transformedVertices[t[1]][0], transformedVertices[t[1]][1], transformedVertices[t[1]][2]], 
-                                   [transformedVertices[t[2]][0], transformedVertices[t[2]][1], transformedVertices[t[2]][2]]];
-                    testn = rasterizeTriangle(projected_t, zBuffer, width, height);
-                })
-
-                // for (let i = 0; i < face.length; i++) 
-                // {
-                //     const [x1, y1] = transformedVertices[face[i]];
-
-                //     const [x2, y2] = transformedVertices[face[(i + 1) % face.length]];
-                    
-                //     ctx.moveTo(x1, y1);
-                //     ctx.lineTo(x2, y2);
-                // }
-            });
-        }
+            // растеризация
+            triangles.forEach(t => {
+                all_triangles.push(t);
+                projected_t = [[transformedVertices[t[0]][0], transformedVertices[t[0]][1], transformedVertices[t[0]][2]],
+                                [transformedVertices[t[1]][0], transformedVertices[t[1]][1], transformedVertices[t[1]][2]], 
+                                [transformedVertices[t[2]][0], transformedVertices[t[2]][1], transformedVertices[t[2]][2]]];
+                testn = rasterizeTriangle(projected_t, zBuffer, width, height);
+            })
+        });
 
         renderDepthBuffer(zBuffer);
 
         //отображение триангуляции
-        ctx.strokeStyle = 'pink';
-        ctx.beginPath();
-        all_triangles.forEach(t=>{
-            for (let i = 0; i < t.length; i++)
-            {
-                const [x1, y1] = transformedVertices[t[i]];
-                const [x2, y2] = transformedVertices[t[(i + 1) % t.length]];
-                
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+        if (showEdges)
+        {
+            ctx.strokeStyle = 'pink';
+            ctx.beginPath();
+            all_triangles.forEach(t=>{
+                for (let i = 0; i < t.length; i++)
+                {
+                    const [x1, y1] = transformedVertices[t[i]];
+                    const [x2, y2] = transformedVertices[t[(i + 1) % t.length]];
+                    
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                }
+            ctx.stroke();
+            })
             }
-        ctx.stroke();
-        })
-
         // вершины
         if (showVertices) {
             ctx.fillStyle = 'red';
@@ -157,36 +145,7 @@ function draw() {
                 ctx.fill();
             });
         }
-
-        // отображение куба
-        if (showCube && !isCube) {
-            const transformedVerticesCube = cube.vertices.map(vertex => {
-                let point = [...vertex, 1];
-                if(Ax !== Bx || Ay !== By || Az !== Bz)
-                    point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);  
-                point = multiplyMatrixAndPoint(rotationX, point);
-                point = multiplyMatrixAndPoint(rotationY, point);
-                point = multiplyMatrixAndPoint(rotationZ, point);
-                point = multiplyMatrixAndPoint(scaling, point);
-                point = multiplyMatrixAndPoint(translating, point);
-                point = multiplyMatrixAndPoint(reflectionMatrix, point);
-                return project([point[0], point[1], point[2]]);
-            });
-
-            ctx.strokeStyle = 'pink';
-            ctx.beginPath();
-            cube.faces.forEach(face => {
-                for (let i = 0; i < face.length; i++) {
-                    const [x1, y1] = transformedVerticesCube[face[i]];
-                    const [x2, y2] = transformedVerticesCube[face[(i + 1) % face.length]];
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                }
-            });
-            ctx.stroke();
-        }
-
-        //TEST
+        // XYZ
         if (showXYZ)
         {
             const transformedXYZ = xyz.vertices.map(vertex => {
@@ -224,76 +183,82 @@ function draw() {
 }
 
 function rasterizeTriangle(triangle, zBuffer, width, height) {
-    n = 0;
-    const v0 = triangle[0];
-    const v1 = triangle[1];
-    const v2 = triangle[2];
+    n = 0
+    const [v0, v1, v2] = triangle; // Три вершины треугольника (x, y, z)
 
-    // Упорядочиваем вершины по y (y0 <= y1 <= y2)
-    const vertices = [v0, v1, v2].sort((a, b) => a[1] - b[1]);
-    const [[x0s, y0s, z0s], [x1s, y1s, z1s], [x2s, y2s, z2s]] = vertices;
+    // Сортировка по Y-координате для упрощения
+    const [p0, p1, p2] = [v0, v1, v2].sort((a, b) => a[1] - b[1]);
 
-    // Растеризация верхнего и нижнего треугольника
-    const fillFlatTriangle = (xStart, yStart, zStart, xEnd, yEnd, zEnd, xTip, yTip, zTip) => {
-        const invSlope1 = (xEnd - xStart) / (yEnd - yStart || 1);
-        const invSlope2 = (xTip - xStart) / (yTip - yStart || 1);
-        let zSlope1 = (zEnd - zStart) / (yEnd - yStart || 1);
-        let zSlope2 = (zTip - zStart) / (yTip - yStart || 1);
+    // Вычисление границ по Y
+    const yMin = Math.max(Math.ceil(p0[1]), 0);
+    const yMax = Math.min(Math.floor(p2[1]), height - 1);
 
-        let curX1 = xStart;
-        let curX2 = xStart;
-        let curZ1 = zStart;
-        let curZ2 = zStart;
+    for (let y = yMin; y <= yMax; y++) {
+        // Интерполяция X-координат и Z для текущей строки
+        let xStart, xEnd, zStart, zEnd;
 
-        for (let y = Math.ceil(yStart); y <= Math.ceil(yEnd); y++) {//округляем y и x чтобы однозначно вычислять индекс буфера
-
-
-            if (y < 0 || y >= height) continue; // Игнорируем координаты вне экрана
-
-            const startX = Math.ceil(curX1);
-            const endX = Math.ceil(curX2);
-            let z = curZ1;
-
-            const zStep = (curZ2 - curZ1) / (endX - startX || 1);
-
-            for (let x = startX; x <= endX; x++) {
-
-                if (x < 0 || x >= width) continue; // Игнорируем координаты вне экрана
-
-                const index = y * width + x;
-
-                if (z < zBuffer[index]) //обновляем буфер
-                    {zBuffer[index] = z; n++;}
-
-                z += zStep;
-            }
-
-            curX1 += invSlope1;
-            curX2 += invSlope2;
-            curZ1 += zSlope1;
-            curZ2 += zSlope2;
+        if (y < p1[1]) { // Верхняя половина треугольника
+            const t0 = (y - p0[1]) / (p1[1] - p0[1]);
+            const t1 = (y - p0[1]) / (p2[1] - p0[1]);
+            xStart = lerp(p0[0], p1[0], t0);
+            zStart = lerp(p0[2], p1[2], t0);
+            xEnd = lerp(p0[0], p2[0], t1);
+            zEnd = lerp(p0[2], p2[2], t1);
+        } else { // Нижняя половина треугольника
+            const t0 = (y - p1[1]) / (p2[1] - p1[1]);
+            const t1 = (y - p0[1]) / (p2[1] - p0[1]);
+            xStart = lerp(p1[0], p2[0], t0);
+            zStart = lerp(p1[2], p2[2], t0);
+            xEnd = lerp(p0[0], p2[0], t1);
+            zEnd = lerp(p0[2], p2[2], t1);
         }
-    };
 
-    // Обрабатываем нижний треугольник
-    fillFlatTriangle(x0s, y0s, z0s, x1s, y1s, z1s, x2s, y2s, z2s);
+        // Обеспечение порядка X
+        if (xStart > xEnd) {
+            [xStart, xEnd] = [xEnd, xStart];
+            [zStart, zEnd] = [zEnd, zStart];
+        }
 
-    // Обрабатываем верхний треугольник
-    fillFlatTriangle(x1s, y1s, z1s, x2s, y2s, z2s, x0s, y0s, z0s);
-    return n;
+        // Округление X для пиксельных границ
+        const xMin = Math.max(Math.ceil(xStart), 0);
+        const xMax = Math.min(Math.floor(xEnd), width - 1);
+
+        for (let x = xMin; x <= xMax; x++) {
+            // Интерполяция Z
+            const t = (x - xStart) / (xEnd - xStart);
+            const z = lerp(zStart, zEnd, t);
+
+            // Индекс в Z-буфере
+            const index = Math.floor(y) * width + Math.floor(x);
+
+            // Обновление Z-буфера, если пиксель ближе
+            if (z > zBuffer[index]) {
+                zBuffer[index] = z;
+                n++;
+                // Дополнительно можно рисовать пиксель (опционально)
+                ctx.fillStyle = `rgb(${Math.floor((1 - z) * 255)}, ${Math.floor((1 - z) * 255)}, ${Math.floor((1 - z) * 255)})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+    }
+}
+
+// Линейная интерполяция
+function lerp(a, b, t) {
+    return a + t * (b - a);
 }
 
 function renderDepthBuffer(zBuffer) 
 {
     // Найти минимальное и максимальное значение в Z-буфере
-    let minZ = Infinity, maxZ = -Infinity;
+    let minZ = -Infinity, maxZ = Infinity;
     for (let z of zBuffer) {
-        if (z < minZ && z !== Infinity) minZ = z;
-        if (z > maxZ && z !== Infinity) maxZ = z;
+        if (z > minZ && z !== -Infinity) minZ = z.toFixed(5);
+        if (z < maxZ && z !== -Infinity) maxZ = z.toFixed(5);
     }
     
     // Если буфер пуст, заполнить серым цветом
-    if (minZ === Infinity || maxZ === -Infinity) {
+    if (minZ === -Infinity || maxZ === Infinity) {
         ctx.fillStyle = "rgb(128, 128, 128)";
         ctx.fillRect(0, 0, width, height);
         return;
@@ -307,12 +272,11 @@ function renderDepthBuffer(zBuffer)
         for (let x = 0; x < width; x++) {
             const index = y * width + x;
             const z = zBuffer[index];
-
-            // Если пиксель не был изменен, закрасить его серым цветом
-            let shade = 128; // Средний серый
-            if (z !== Infinity) {
+            
+            let shade = 128; // Если пиксель не был изменен, закрасить его серым цветом
+            if (z !== -Infinity) {
                 // Линейная интерполяция оттенка серого
-                shade = Math.floor(((z - minZ) / (maxZ - minZ)) * 255);
+                shade = Math.floor(((z.toFixed(5) - minZ) / (maxZ - minZ)) * 255);
             }
 
             // Заполнить RGBA
@@ -650,8 +614,7 @@ const dodecahedron = {
 
 let showVertices = true;
 let showEdges = true;
-let showCube = false;
-let showXYZ = true; //TEST
+let showXYZ = true;
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
 let translateX = 0, translateY = 0, translateZ = 0;
@@ -711,11 +674,6 @@ document.getElementById('showVertices').addEventListener('change', (e) => {
 
 document.getElementById('showEdges').addEventListener('change', (e) => {
     showEdges = e.target.checked;
-    draw();
-});
-
-document.getElementById('showCube').addEventListener('change', (e) => {
-    showCube = e.target.checked;
     draw();
 });
 
@@ -900,7 +858,7 @@ function projectPerspective(point) {//
     const perspectiveMatrix = [
         [scale, 0, 0, 0],
         [0, -scale, 0, 0], // -scale для инверсии Y
-        [0, 0, scale, 0], 
+        [0, 0, 1, 0], 
         [0, 0, -1 / c, 1]
     ];
 
@@ -912,7 +870,7 @@ function projectPerspective(point) {//
     return [
         (x / adjustedW) + canvas.width / 2, 
         (y / adjustedW) + canvas.height / 2,  
-        z/adjustedW, 
+        z, 
         1
     ];
 }
