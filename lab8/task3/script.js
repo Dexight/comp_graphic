@@ -481,6 +481,39 @@ document.getElementById('reflectXZ').addEventListener('change', draw);
 
 document.getElementById('reflectYZ').addEventListener('change', draw);
 
+
+//--------8.3 Обработчики -------------
+// document.getElementById('cameraX').addEventListener('input', (e)=>{
+//     cameraX = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // draw();
+// });
+// document.getElementById('cameraY').addEventListener('input', (e)=>{
+//     cameraY = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // draw();
+// });
+// document.getElementById('cameraZ').addEventListener('input', (e)=>{
+//     cameraZ = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // draw();
+// });
+// document.getElementById('cameraAngleRotationX').addEventListener('input', (e)=>{
+//     cameraAngleRotationX = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // animate();
+// });
+// document.getElementById('cameraAngleRotationY').addEventListener('input', (e)=>{
+//     cameraAngleRotationY = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // animate();
+// });
+// document.getElementById('cameraRotationSpeed').addEventListener('input', (e)=>{
+//     cameraRotationSpeed = parseFloat(e.target.value);
+//     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     // animate();
+// });
+//--------8.3 Обработчики -------------
 // Перемножение матриц
 function multiplyMatrices(matrixA, matrixB) {
     const rowsA = matrixA.length;
@@ -616,7 +649,7 @@ function getRotationAroundLineMatrix(point0, point1, angle){
     ];
 }
 //------------8.3---------------------------
-let cameraX = 0, cameraY = 0, cameraZ = -5; // координаты камеры
+let cameraX = 10, cameraY = 0, cameraZ = -5; // координаты камеры
 let cameraAngleRotationX = 0, cameraAngleRotationY = 45, cameraAngleRotationZ = 0; // углы поворота камеры  
 let cameraRotationSpeed = 0.01; // скорость вращения камеры
 
@@ -658,9 +691,8 @@ function getLookAtMatrix(cameraPos, target, up){
         ]
     ];
 }
-
+let cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
 function getCameraMatrix() {
-    let cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
     //новая позиция повернутой камеры
     const newCameraX = cameraRadius * Math.cos(cameraAngleRotationY) * Math.cos(cameraAngleRotationX);
     const newCameraY = cameraRadius * Math.sin(cameraAngleRotationX);
