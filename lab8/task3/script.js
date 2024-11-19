@@ -513,6 +513,31 @@ document.getElementById('reflectYZ').addEventListener('change', draw);
 //     cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
 //     // animate();
 // });
+
+
+
+document.getElementById('cameraAngleRotationX').addEventListener('input', (e) => {
+    cameraAngleRotationX = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+document.getElementById('cameraAngleRotationY').addEventListener('input', (e) => {
+    cameraAngleRotationY = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+document.getElementById('cameraX').addEventListener('input', (e) => {
+    cameraX = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('cameraY').addEventListener('input', (e) => {
+    cameraY = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('cameraZ').addEventListener('input', (e) => {
+    cameraZ = parseFloat(e.target.value);
+    draw();
+});
+
 //--------8.3 Обработчики -------------
 // Перемножение матриц
 function multiplyMatrices(matrixA, matrixB) {
