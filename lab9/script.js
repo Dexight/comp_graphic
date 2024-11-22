@@ -11,6 +11,24 @@ let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
 let currentFigure = null;
+let lightPosX = document.getElementById('lightPosX').value;
+let lightPosY = document.getElementById('lightPosY').value;
+let lightPosZ = document.getElementById('lightPosZ').value;
+
+document.getElementById('lightPosX').addEventListener('input', (e) => {
+    lightPosX = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('lightPosY').addEventListener('input', (e) => {
+    lightPosY = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('lightPosZ').addEventListener('input', (e) => {
+    lightPosZ = parseFloat(e.target.value);
+    draw();
+});
 
 //=======Z-buffer=======
 
@@ -62,6 +80,7 @@ function cosAngleBetween(vector1, vector2) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let zBuffer = Array(width * height).fill(-Infinity);
+    let normalBuffer = new Array(width * height).fill(null);
 
     let project = projectPerspective; 
     let viewVector = [0, 0, 1];
@@ -165,12 +184,12 @@ function draw() {
                     visibleTriangles.push(t);
 
                     projected_t = [v1, v2, v3];
-                    [minZ, maxZ] = rasterizeTriangle(projected_t, zBuffer, width, height, minZ, maxZ);
+                    [minZ, maxZ] = rasterizeTriangle(projected_t, zBuffer, normalBuffer, width, height, minZ, maxZ, normal);
                 }
             })
         });
 
-        renderDepthBuffer(zBuffer, minZ.toFixed(5), maxZ.toFixed(5));
+        renderDepthBuffer(zBuffer, normalBuffer, minZ.toFixed(5), maxZ.toFixed(5));
 
         // отображение триангуляции
         if (showEdges)
@@ -238,7 +257,7 @@ function draw() {
     load_obj.style.display = showSurfacePanel? 'none' : 'inline'
 }
 
-function rasterizeTriangle(triangle, zBuffer, width, height, minZ, maxZ) 
+function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ, maxZ, normal) 
 {
     const [v0, v1, v2] = triangle; // Три вершины треугольника (x, y, z)
 
@@ -293,10 +312,14 @@ function rasterizeTriangle(triangle, zBuffer, width, height, minZ, maxZ)
             // Индекс в Z-буфере
             const index = Math.floor(y) * width + Math.floor(x);
 
+            // Интерполяция нормали
+            //const normal = interpolateVertexNormal(p0, p1, p2, vertexNormals, x, y);
+
             // Обновление Z-буфера, если пиксель ближе
             if (z > zBuffer[index]) 
             {
                 zBuffer[index] = z;
+                normalBuffer[index] = normal;
             }
 
             // Обновление z границ;
@@ -305,18 +328,17 @@ function rasterizeTriangle(triangle, zBuffer, width, height, minZ, maxZ)
         }
     }
 
-    return [minZ, maxZ];
+    return [minZ, maxZ, normalBuffer];
 }
 
 // Линейная интерполяция
 function lerp(a, b, t) { return a + t * (b - a); }
 
-function renderDepthBuffer(zBuffer, minZ, maxZ) 
-{    
-    // Если буфер пуст, заполнить серым цветом
-    if (minZ === -Infinity || maxZ === Infinity) 
-    {
-        ctx.fillStyle = "rgb(128, 128, 128)";
+function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
+    // Если буфер пуст, заполнить белым цветом
+    if (minZ === -Infinity || maxZ === Infinity) {
+        console.log("Buffer is empty, filling with gray color.");
+        ctx.fillStyle = "rgb(255, 255, 255)";
         ctx.fillRect(0, 0, width, height);
         return;
     }
@@ -325,33 +347,83 @@ function renderDepthBuffer(zBuffer, minZ, maxZ)
     const imageData = ctx.createImageData(width, height);
     const data = imageData.data;
 
-    for (let y = 0; y < height; y++) 
-    {
-        for (let x = 0; x < width; x++) 
-        {
+    const lightPos = [lightPosX, lightPosY, lightPosZ];
+    const baseColor = { r: 255, g: 0, b: 0 }; 
+    const ambientIntensity = 0.3; 
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
             const index = y * width + x;
             const z = zBuffer[index];
-            
-            let shade = 128; // Если пиксель не был изменен, закрасить его серым цветом
-            if (z !== -Infinity) 
-            {
-                // Линейная интерполяция оттенка серого
-                shade = Math.floor(((z.toFixed(5) - minZ) / (maxZ - minZ)) * 255);
-            }
 
-            // Заполнить RGBA
+            let shade = { r: 255, g: 255, b: 255 }; // Цвет по умолчанию
+            if (z !== -Infinity) {
+                const normal = normalBuffer[index];
+                if (normal) {
+                    // Вычисление направления света от источника к текущему пикселю
+                    const lightDir = [
+                        lightPos[0] - x,
+                        lightPos[1] - y,
+                        lightPos[2] - z
+                    ];
+
+                    const intensity = calculateLambert(normal, lightDir, ambientIntensity);
+                    shade = applyShading(baseColor, intensity);
+
+                    //console.log(`Pixel (${x}, ${y}): z=${z}, normal=${normal}, lightDir=${lightDir}, intensity=${intensity}, shade=${shade}`);
+                } 
+            } 
+
             const pixelIndex = (y * width + x) * 4;
-            data[pixelIndex] = shade;        // Red
-            data[pixelIndex + 1] = shade;    // Green
-            data[pixelIndex + 2] = shade;    // Blue
-            data[pixelIndex + 3] = 255;      // Alpha
+            data[pixelIndex] = shade.r;        // Красный
+            data[pixelIndex + 1] = shade.g;    // Зеленый
+            data[pixelIndex + 2] = shade.b;    // Синий
+            data[pixelIndex + 3] = 255;        // Альфа
         }
     }
 
-    // Нарисовать изображение на холсте
     ctx.putImageData(imageData, 0, 0);
 }
 //======================
+
+function calculateLambert(normal, lightDir, ambientIntensity) {
+    let k = 0.7;
+    let i = 1;
+
+    // Нормализуем нормаль
+    const normalLength = Math.hypot(normal[0], normal[1], normal[2]);
+    const normalizedNormal = [
+        normal[0] / normalLength,
+        normal[1] / normalLength,
+        normal[2] / normalLength
+    ];
+
+    // Нормализуем направление света
+    const lightLength = Math.hypot(lightDir[0], lightDir[1], lightDir[2]);
+    const normalizedLightDir = [
+        lightDir[0] / lightLength,
+        lightDir[1] / lightLength,
+        lightDir[2] / lightLength
+    ];
+
+    // Вычисляем скалярное произведение нормали и направления света
+    const dotProduct = normalizedNormal[0] * normalizedLightDir[0] +
+                       normalizedNormal[1] * normalizedLightDir[1] +
+                       normalizedNormal[2] * normalizedLightDir[2];
+
+    // Интенсивность освещения не может быть отрицательной
+    const lambertIntensity = Math.max(0, dotProduct) * k * i;
+
+    return ambientIntensity + lambertIntensity ;
+}
+
+function applyShading(baseColor, intensity) {
+    return {
+        r: Math.min(255, Math.floor(baseColor.r * intensity)),
+        g: Math.min(255, Math.floor(baseColor.g * intensity)),
+        b: Math.min(255, Math.floor(baseColor.b * intensity))
+    };
+}
 
 function saveFigureToFile() {
     if (!currentFigure) {
@@ -1023,26 +1095,60 @@ function parseOBJ(data) {
     const lines = data.split('\n');
     const vertices = [];
     const faces = [];
+    const normals = [];
+    const textures = [];
+    const faceNormals = [];
+    const faceTextures = [];
 
     lines.forEach(line => {
-        const parts = line.trim().split(' ');
+        const parts = line.trim().split(/\s+/);
         if (parts[0] === 'v') {
-            // Добавление вершины
+            // Вершина
             const vertex = parts.slice(1, 4).map(Number);
             vertices.push(vertex);
+        } else if (parts[0] === 'vn') {
+            // Нормаль вершины
+            const normal = parts.slice(1, 4).map(Number);
+            normals.push(normal);
+        } else if (parts[0] === 'vt') {
+            // Текстурная координата
+            const texture = parts.slice(1, 3).map(Number);
+            textures.push(texture);
         } else if (parts[0] === 'f') {
-            // Добавление грани
-            const face = parts.slice(1).map(part => {
-                const vertexIndex = parseInt(part.split('/')[0]) - 1; // Убираем индексы нормалей и текстур
-                return vertexIndex;
+            // Грань
+            const face = [];
+            const faceNormal = [];
+            const faceTexture = [];
+
+            parts.slice(1).forEach(part => {
+                const indices = part.split('/');
+                const vertexIndex = parseInt(indices[0], 10) - 1;
+                face.push(vertexIndex);
+
+                if (indices[1]) {
+                    const textureIndex = parseInt(indices[1], 10) - 1;
+                    faceTexture.push(textureIndex);
+                }
+
+                if (indices[2]) {
+                    const normalIndex = parseInt(indices[2], 10) - 1;
+                    faceNormal.push(normalIndex);
+                }
             });
+
             faces.push(face);
+            faceTextures.push(faceTexture);
+            faceNormals.push(faceNormal);
         }
     });
 
     customFigure = {
         vertices: vertices,
         faces: faces,
+        normals: normals,
+        textures: textures,
+        faceNormals: faceNormals,
+        faceTextures: faceTextures,
     };
 }
 //функция для рисования прямой
