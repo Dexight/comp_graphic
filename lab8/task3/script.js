@@ -678,59 +678,73 @@ let cameraX = 10, cameraY = 0, cameraZ = -5; // координаты камер�
 let cameraAngleRotationX = 0, cameraAngleRotationY = 45, cameraAngleRotationZ = 0; // углы поворота камеры  
 let cameraRotationSpeed = 0.01; // скорость вращения камеры
 
-function normalize(vector){
-    const length = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
-    return vector.map(v => v / length);
-}
+// function normalize(vector){
+//     const length = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+//     return vector.map(v => v / length);
+// }
 
-function dotProduct(a, b) {
-    return a.reduce((sum, ai, i) => sum + ai * b[i], 0);
-}
+// function dotProduct(a, b) {
+//     return a.reduce((sum, ai, i) => sum + ai * b[i], 0);
+// }
 
-function crossProduct(a, b) {
-    return [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0]
-    ];
-}
+// function crossProduct(a, b) {
+//     return [
+//         a[1] * b[2] - a[2] * b[1],
+//         a[2] * b[0] - a[0] * b[2],
+//         a[0] * b[1] - a[1] * b[0]
+//     ];
+// }
 
-function getLookAtMatrix(cameraPos, target, up){
-    const [cx, cy, cz] = cameraPos;
-    const [tx, ty, tz] = target;
-    // const [ux, uy, uz] = up;
+// function getLookAtMatrix(cameraPos, target, up){
+//     const [cx, cy, cz] = cameraPos;
+//     const [tx, ty, tz] = target;
+//     // const [ux, uy, uz] = up;
 
-    const forwardVector = normalize([tx - cx, ty - cy, tz - cz]);
-    const rightHandVector = normalize(crossProduct(forwardVector, up));
-    const newUpVector = crossProduct(rightHandVector,forwardVector);
+//     const forwardVector = normalize([tx - cx, ty - cy, tz - cz]);
+//     const rightHandVector = normalize(crossProduct(forwardVector, up));
+//     const newUpVector = crossProduct(rightHandVector,forwardVector);
 
-    return [
-        [rightHandVector[0], newUpVector[0], -forwardVector[0], 0],
-        [rightHandVector[1], newUpVector[1], -forwardVector[1], 0],
-        [rightHandVector[2], newUpVector[2], -forwardVector[2], 0],
-        [
-            -dotProduct(rightHandVector, cameraPos),
-            -dotProduct(newUpVector, cameraPos),
-            dotProduct(forwardVector, cameraPos),
-            1
-        ]
-    ];
-}
-let cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
+//     return [
+//         [rightHandVector[0], newUpVector[0], -forwardVector[0], 0],
+//         [rightHandVector[1], newUpVector[1], -forwardVector[1], 0],
+//         [rightHandVector[2], newUpVector[2], -forwardVector[2], 0],
+//         [
+//             -dotProduct(rightHandVector, cameraPos),
+//             -dotProduct(newUpVector, cameraPos),
+//             dotProduct(forwardVector, cameraPos),
+//             1
+//         ]
+//     ];
+// }
+// let cameraRadius = Math.sqrt(cameraX*cameraX + cameraY*cameraY + cameraZ*cameraZ);  // Радиус вращения камеры
 function getCameraMatrix() {
-    //новая позиция повернутой камеры
-    const newCameraX = cameraRadius * Math.cos(cameraAngleRotationY) * Math.cos(cameraAngleRotationX);
-    const newCameraY = cameraRadius * Math.sin(cameraAngleRotationX);
-    const newCameraZ = cameraRadius * Math.sin(cameraAngleRotationY) * Math.cos(cameraAngleRotationX);
+    // Перевод камеры в мировые координаты (вращение + трансляция)
+    const rotationX = getRotationXMatrix(cameraAngleRotationX);
+    const rotationY = getRotationYMatrix(cameraAngleRotationY);
+    const rotationZ = getRotationZMatrix(cameraAngleRotationZ);
+    const translation = getTranslationMatrix(-cameraX, -cameraY, -cameraZ);
 
-    const cameraPosition = [newCameraX, newCameraY, newCameraZ]; // Новая позиция камеры
+    // Последовательное применение всех трансформаций
+    const rotation = multiplyMatrices(multiplyMatrices(rotationX, rotationY), rotationZ);
 
-    const upVector = [0, 1, 0]; // Вектор "вверх"
+    // Матрица вида камеры (View Matrix)
+    const viewMatrix = multiplyMatrices(rotation, translation);
 
-    // Матрица lookAt, чтобы камера смотрела на центр сцены (0, 0, 0)
-    const lookAtMatrix = getLookAtMatrix(cameraPosition, [0, 0, 0], upVector);
+    // Матрица перспективной проекции
+    const near = 0.1; // ближняя плоскость
+    const far = 1000.0; // дальняя плоскость
+    const fov = Math.PI / 4; // угол обзора (в радианах)
+    const aspect = canvas.width / canvas.height; // соотношение сторон экрана
 
-    return lookAtMatrix;
+    const perspectiveMatrix = [
+        [1 / (aspect * Math.tan(fov / 2)), 0, 0, 0],
+        [0, 1 / Math.tan(fov / 2), 0, 0],
+        [0, 0, -(far + near) / (far - near), (-2 * far * near) / (far - near)],
+        [0, 0, -1, 0],
+    ];
+
+    // Итоговая матрица камеры
+    return multiplyMatrices(perspectiveMatrix, viewMatrix);
 }
 
 
@@ -1029,6 +1043,6 @@ function animate() {
     draw();
     requestAnimationFrame(animate);
 }
-animate();
+//animate();
 
-// draw();
+draw();
