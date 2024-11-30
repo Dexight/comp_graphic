@@ -7,22 +7,56 @@
 </head>
     <body style="display: flex; align-items: center; flex-direction: column;">
         <canvas id="glCanvas" width="400" height="400"></canvas>
-        
-        <label> 1 вершина: </label>
-        <label> X: <input type="range" id="X1" min="-1" max="1" step="0.01" value="0"> </label>
-        <label> Y: <input type="range" id="Y1" min="-1" max="1" step="0.01" value="1"> </label>
-        
-        <label> 2 вершина: </label>
-        <label> X: <input type="range" id="X2" min="-1" max="1" step="0.01" value="-1"> </label>
-        <label> Y: <input type="range" id="Y2" min="-1" max="1" step="0.01" value="-1"> </label>
-        
-        <label> 3 вершина: </label>
-        <label> X: <input type="range" id="X3" min="-1" max="1" step="0.01" value="1"> </label>
-        <label> Y: <input type="range" id="Y3" min="-1" max="1" step="0.01" value="-1"> </label>
+        <!--Выпадающие списки-->
+        <div style="display: flex; flex-direction: row; align-items: center;">
+          <div style = "display: flex; flex-direction: column; margin: 5px; align-items: center;">
+            <label for="figure"><b>Выберите фигуру:</b></label>
+            <select id="figure" name="figure">
+                <option value="4angle" selected>Четырёхугольник</option>
+                <option value="veer">Веер</option>
+                <option value="5angle">Правильный пятиугольник</option>
+            </select>
+          </div>
 
-        <label for="color1">Цвет</label>
-        <input type="color" id="color" value="#00ff00" style="height: 30px; width: 70px; padding:0px 1px; background-color: white;">
+          <div style = "display: flex; flex-direction: column; margin: 5px; align-items: center;">
+            <label for="colorSelector"><b>Выберите стиль окраски:</b></label>
+            <select id="colorSelector" name="colorSelector">
+                <option value="constant" selected>Константный зелёный цвет</option>
+                <option value="uniform">Передача через uniform</option>
+                <option value="gradient">Градиент</option>
+            </select>
+          </div>
+          
+          <input type="color" id="chooseColor" value="#00ff00" style="height: 30px; width: 70px; padding:0px 1px; background-color: white; display: none; margin: 5px;">
+        </div>
+        <!--Панельки-->
+        <div id = "quadranglePointsChangePanel" style="display: flex; flex-direction: column; align-items: center;">
+          <label> 1 вершина: </label>
+          <label> X: <input type="range" id="X1" min="-1" max="1" step="0.01" value="-0.5"> </label>
+          <label> Y: <input type="range" id="Y1" min="-1" max="1" step="0.01" value="0.5"> </label>
+          
+          <label> 2 вершина: </label>
+          <label> X: <input type="range" id="X2" min="-1" max="1" step="0.01" value="0.5"> </label>
+          <label> Y: <input type="range" id="Y2" min="-1" max="1" step="0.01" value="0.5"> </label>
+          
+          <label> 3 вершина: </label>
+          <label> X: <input type="range" id="X3" min="-1" max="1" step="0.01" value="0.5"> </label>
+          <label> Y: <input type="range" id="Y3" min="-1" max="1" step="0.01" value="-0.5"> </label>
 
+          <label> 4 вершина: </label>
+          <label> X: <input type="range" id="X4" min="-1" max="1" step="0.01" value="-0.5"> </label>
+          <label> Y: <input type="range" id="Y4" min="-1" max="1" step="0.01" value="-0.5"> </label>
+        </div>
+        <div id = "pentagonRadiusChangePanel" style="display: none; flex-direction: column; align-items: center;">
+          <label> Радиус описанной окружности: </label>
+          <label> R: <input type="range" id="R" min="0.01" max="1" step="0.01" value="1"> </label>
+        </div>
+        <div id = "veerCountsPanel" style="display: none; flex-direction: column; align-items: center;">
+          <label> Количество разбиений одной половинки веера: </label>
+          <label> N: <input type = "number" id = "N" min="2" max="10" step="1" value="3"> </label>
+          <label> Положение нижней точки: </label>
+          <label> Y: <input type="range" id="bottom_point" min="-1" max="0" step="0.01" value="-0.75"> </label>
+        </div>
         <script src="script.js"></script>
     </body>
 </html>
