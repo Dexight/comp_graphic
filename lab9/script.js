@@ -11,6 +11,7 @@ let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
 let currentFigure = null;
+let useFileNormals = false; 
 let lightPosX = document.getElementById('lightPosX').value;
 let lightPosY = document.getElementById('lightPosY').value;
 let lightPosZ = document.getElementById('lightPosZ').value;
@@ -27,6 +28,11 @@ document.getElementById('lightPosY').addEventListener('input', (e) => {
 
 document.getElementById('lightPosZ').addEventListener('input', (e) => {
     lightPosZ = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('useFileNormalsCheckbox').addEventListener('change', (e) => {
+    useFileNormals = e.target.checked;
     draw();
 });
 
@@ -62,6 +68,9 @@ function calculateNormal(vertex1, vertex2, vertex3) {
         vector1[2] * vector2[0] - vector1[0] * vector2[2],
         vector1[0] * vector2[1] - vector1[1] * vector2[0]
     ];
+    // console.log('vector1', vector1);
+    // console.log('vector2', vector2);
+    // console.log('normal',normal);
     return normal;
 }
 
@@ -157,15 +166,18 @@ function draw() {
                 point = multiplyMatrixAndPoint(scaling, point);
                 point = multiplyMatrixAndPoint(translating, point);
                 point = multiplyMatrixAndPoint(reflectionMatrix, point);  
-                return project([point[0], point[1], point[2]]);
+                return point;
             });
-        
+
+        const projectedVertices = transformedVertices.map(vertex => project([vertex[0], vertex[1], vertex[2]]));
+        console.log(projectedVertices);
+                
         // грани
         let visibleTriangles = [];
         let minZ = Infinity;
         let maxZ = -Infinity;
 
-        figure.faces.forEach(face => {
+        figure.faces.forEach((face, faceIndex) => {
             // триангуляция если > 3 точек
             triangles = [];
             if (face.length > 3)
@@ -173,21 +185,25 @@ function draw() {
             else { triangles.push(face); }
 
             // Отсечение нелицевых и растеризация
-            triangles.forEach(t => {
+            triangles.forEach((t, tIndex) => {
                 const [v1, v2, v3] = t.map(index => transformedVertices[index]);
-                const normal = calculateNormal(v1, v2, v3);
-                const cosAngle = cosAngleBetween(normal, viewVector);
-                
-                //console.log('Normal:', normal, 'View Vector:', viewVector, 'Cos Angle:', cosAngle);
+                let normal;
+                if (useFileNormals && figure.faceNormals[faceIndex]) {
+                    normal = figure.normals[figure.faceNormals[faceIndex][tIndex]];
+                } else {
+                    normal = calculateNormal(v1, v2, v3);
+                }
+                const [pv1, pv2, pv3] = t.map(index => projectedVertices[index]);
+                const projectedNormal = calculateNormal(pv1, pv2, pv3);
+                const cosAngle = cosAngleBetween(projectedNormal, viewVector);
 
                 if (cosAngle < 0) { // Отсечение нелицевых граней
                     visibleTriangles.push(t);
-
-                    projected_t = [v1, v2, v3];
-                    [minZ, maxZ] = rasterizeTriangle(projected_t, zBuffer, normalBuffer, width, height, minZ, maxZ, normal);
+                    [minZ, maxZ] = rasterizeTriangle([pv1, pv2, pv3], zBuffer, normalBuffer, width, height, minZ, maxZ, normal);
                 }
             })
         });
+
 
         renderDepthBuffer(zBuffer, normalBuffer, minZ.toFixed(5), maxZ.toFixed(5));
 
@@ -199,8 +215,8 @@ function draw() {
             visibleTriangles.forEach(t=>{
                 for (let i = 0; i < t.length; i++)
                 {
-                    const [x1, y1] = transformedVertices[t[i]];
-                    const [x2, y2] = transformedVertices[t[(i + 1) % t.length]];
+                    const [x1, y1] = projectedVertices[t[i]];
+                    const [x2, y2] = projectedVertices[t[(i + 1) % t.length]];
                     
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
@@ -213,7 +229,7 @@ function draw() {
         if (showVertices) 
         {
             ctx.fillStyle = 'red';
-            transformedVertices.forEach(([x, y]) => {
+            projectedVertices.forEach(([x, y]) => {
                 ctx.beginPath();
                 ctx.arc(x, y, 5, 0, Math.PI * 2);
                 ctx.fill();
@@ -312,14 +328,11 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
             // Индекс в Z-буфере
             const index = Math.floor(y) * width + Math.floor(x);
 
-            // Интерполяция нормали
-            //const normal = interpolateVertexNormal(p0, p1, p2, vertexNormals, x, y);
-
             // Обновление Z-буфера, если пиксель ближе
             if (z > zBuffer[index]) 
             {
                 zBuffer[index] = z;
-                normalBuffer[index] = normal;
+                normalBuffer[index] = [...normal];
             }
 
             // Обновление z границ;
@@ -328,7 +341,7 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
         }
     }
 
-    return [minZ, maxZ, normalBuffer];
+    return [minZ, maxZ];
 }
 
 // Линейная интерполяция
@@ -343,11 +356,19 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
         return;
     }
 
+    // normalBuffer.forEach((normal, index) => {
+    //     if (normal !== null) {
+    //       console.log(normal);
+    //     }
+    //   });
+
     // Массив для хранения данных изображения
     const imageData = ctx.createImageData(width, height);
     const data = imageData.data;
 
     const lightPos = [lightPosX, lightPosY, lightPosZ];
+    console.log('lightPos:', lightPos);
+
     const baseColor = { r: 255, g: 0, b: 0 }; 
     const ambientIntensity = 0.3; 
 
@@ -358,7 +379,13 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
 
             let shade = { r: 255, g: 255, b: 255 }; // Цвет по умолчанию
             if (z !== -Infinity) {
-                const normal = normalBuffer[index];
+                let normal = normalBuffer[index];
+                const normalLength = Math.hypot(normal[0], normal[1], normal[2]);
+                normal = [
+                    normal[0] / normalLength,
+                    normal[1] / normalLength,
+                    normal[2] / normalLength
+                ];
                 if (normal) {
                     // Вычисление направления света от источника к текущему пикселю
                     const lightDir = [
@@ -383,11 +410,15 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
     }
 
     ctx.putImageData(imageData, 0, 0);
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(lightPosX, -lightPosY, lightPosZ, 0, Math.PI * 2);
+    ctx.fill();
 }
 //======================
 
 function calculateLambert(normal, lightDir, ambientIntensity) {
-    let k = 0.7;
+    let k = 0.9;
     let i = 1;
 
     // Нормализуем нормаль
@@ -406,15 +437,18 @@ function calculateLambert(normal, lightDir, ambientIntensity) {
         lightDir[2] / lightLength
     ];
 
+    //console.log('Normal:', normalizedNormal, 'Light dir:', normalizedLightDir);
+
     // Вычисляем скалярное произведение нормали и направления света
-    const dotProduct = normalizedNormal[0] * normalizedLightDir[0] +
-                       normalizedNormal[1] * normalizedLightDir[1] +
-                       normalizedNormal[2] * normalizedLightDir[2];
+    const cosLN = cosAngleBetween(normalizedNormal, normalizedLightDir);
 
+    //console.log('Cos Angle:', cosLN);
+   
     // Интенсивность освещения не может быть отрицательной
-    const lambertIntensity = Math.max(0, dotProduct) * k * i;
+    const lambertIntensity = Math.max(0, cosLN);
+    //console.log('lambertIntensity:', lambertIntensity * k * i);
 
-    return ambientIntensity + lambertIntensity ;
+    return ambientIntensity + lambertIntensity * k * i;
 }
 
 function applyShading(baseColor, intensity) {
@@ -797,7 +831,7 @@ let translateX = 0, translateY = 0, translateZ = 0;
 let Ax = 0, Ay = 0, Az = 0;
 let Bx = 0, By = 0, Bz = 0;
 let angle = 0;
-let currentProjection = 'perspective';
+let currentProjection = 'axonometric';
 
 document.getElementById('perspectiveButton').addEventListener('click', () => {
     currentProjection = 'perspective';
