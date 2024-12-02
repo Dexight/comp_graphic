@@ -15,11 +15,12 @@ let color = [0, 1, 0, 1];
 
 // основной класс фигуры
 class Figure{
-    constructor(vertexShader, fragmentShader, positions)
+    constructor(vertexShader, fragmentShader, positions, colors=null)
     {
         this.vertexShaderSource = vertexShader;
         this.fragmentShaderSource = fragmentShader;//переделать потом в зависимости от выбранного цвета, пока что просто зелёный
         this.positions = positions;
+        this.colors = colors;
     }
 
     draw()
@@ -46,7 +47,6 @@ class Figure{
         // Создание и компиляция шейдеров
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
         const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-
         //================================| 2 Шаг |========================================
 
         // Инициализация шейдерной программы
@@ -80,10 +80,14 @@ class Figure{
 
         // Получение ID атрибута
         const positionAttributeLocation = gl.getAttribLocation(shaderProgram, "aPosition");
-
+        const colorAttributeLocation = gl.getAttribLocation(shaderProgram, 'aColor');
         if (positionAttributeLocation === -1) 
         {
             console.error("Атрибут aPosition не найден в шейдерной программе.");
+        }
+        
+        if(colorAttributeLocation === -1){
+            console.error("Аттрибут aColor не найден в шейдерной программе.");
         }
 
         //================================| 4 Шаг |========================================
@@ -100,6 +104,14 @@ class Figure{
         // Привязка атрибута
         gl.enableVertexAttribArray(positionAttributeLocation);
         gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+        
+        if(colorAttributeLocation !== -1 && this.colors){
+            const colorBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER,  colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.colors), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(colorAttributeLocation);
+            gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, 0, 0)
+        }
 
         //================================| 5 Шаг |========================================
 
@@ -121,13 +133,27 @@ class Figure{
 //хардкод - наше всё
 
 const vertexShader = `attribute vec4 aPosition; //позиция вершины
-                              void main() { gl_Position = aPosition; }`;
+                      attribute vec4 aColor; 
+                      varying vec4 vColor;
+                              void main() { 
+                              gl_Position = aPosition; 
+                              vColor = aColor;
+                              }`;
 
 const constFragmentShader = `precision mediump float; //точность для float чисел
                              void main() { gl_FragColor = vec4(0, 1, 0, 1); }`
+                             
 const uniformFragmentShader = `precision mediump float; //точность для float чисел
                                uniform vec4 uColor; // передаём цвет
                                void main() { gl_FragColor = uColor; }`
+
+const graientFragmentShader = `precision mediump float; //точность для float чисел
+                               varying vec4 vColor; // Цвет
+                               void main(){
+                                    gl_FragColor = vColor;
+                               }
+`;
+
 
 let usedFragmentShader = constFragmentShader;
 // квадрат
@@ -148,7 +174,13 @@ function initQuadrangle()
                             [quadrangle_x1, quadrangle_y1,
                             quadrangle_x2, quadrangle_y2,
                             quadrangle_x3, quadrangle_y3,
-                            quadrangle_x4, quadrangle_y4])
+                            quadrangle_x4, quadrangle_y4], 
+
+                            generateGradColor([quadrangle_x1, quadrangle_y1,
+                                quadrangle_x2, quadrangle_y2,
+                                quadrangle_x3, quadrangle_y3,
+                                quadrangle_x4, quadrangle_y4])  
+                            )
 }
 
 //пятиугольник
@@ -173,7 +205,13 @@ function initPentagon()
                           pentagon_x2, pentagon_y2,
                           pentagon_x3, pentagon_y3,
                           pentagon_x4, pentagon_y4,
-                          pentagon_x5, pentagon_y5])
+                          pentagon_x5, pentagon_y5],
+                          generateGradColor([pentagon_x1, pentagon_y1,
+                            pentagon_x2, pentagon_y2,
+                            pentagon_x3, pentagon_y3,
+                            pentagon_x4, pentagon_y4,
+                            pentagon_x5, pentagon_y5])
+                        )
 }
 
 // веер
@@ -205,9 +243,18 @@ function initVeer()
 
     veer = new Figure(vertexShader,
                       usedFragmentShader,
-                      veer_points)
+                      veer_points,
+                      generateGradColor(veer_points)
+                    )
 }
 
+function generateGradColor(positions){
+    colors = [];
+    for(let i = 0; i < positions.length / 2; ++i){
+        colors.push(Math.random()*0.9+0.1, Math.random()*0.8+0.2, Math.random()*0.7+0.3, 1);
+    }
+    return colors;
+}
 initQuadrangle();
 initVeer();
 initPentagon();
@@ -253,8 +300,9 @@ selectColor.addEventListener('change', (e) => {
         case "uniform":  usedFragmentShader = uniformFragmentShader; 
                          chooseColor.style.display = "inline"; 
                          break;
-        case "gradient": chooseColor.style.display = "none"; 
-                         break; // TODO
+        case "gradient": usedFragmentShader = graientFragmentShader;
+                         chooseColor.style.display = "none"; 
+                         break; 
     }
 
     selectFigure.dispatchEvent(new Event("change"));
