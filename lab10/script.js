@@ -12,8 +12,12 @@ if(!gl){
 //Вершинный шейдер - для вершины треугольника
 const vertexShaderSrc = `
     attribute vec2 aPosition;
+    uniform float uAngle; 
     void main(){
-        gl_Position = vec4(aPosition, 0.0, 1.0); // Установка позиции (x, y, z, w)
+        float cosA = cos(uAngle);
+        float sinA = sin(uAngle);
+        vec2 transformedPosition = vec2(aPosition.x * cosA - aPosition.y * sinA, aPosition.x * sinA + aPosition.y * cosA); 
+        gl_Position = vec4(transformedPosition, 0.0, 1.0); // Установка позиции (x, y, z, w)
     }
 `;
 
@@ -23,6 +27,9 @@ const fragmentShaderSrc = `
         gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // зеленый цвет
     }
 `;
+
+
+
 
 // Функция компиляции шейдера
 function createShader(gl, type, source) {
@@ -92,7 +99,18 @@ gl.enableVertexAttribArray(positionAttributeLocation); // Включаем ат�
 
 //шаг 5
 
+const uAngleLocation = gl.getUniformLocation(program, 'uAngle');
+
+
 gl.useProgram(program);
+
+document.getElementById("rangeAngle").addEventListener('input',(e)=>{
+    const uAngle = (Math.PI / 180)*e.target.value;
+    gl.uniform1f(uAngleLocation, uAngle);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+});
 
 // Очищаем canvas черным цветом
 gl.clearColor(0.0, 0.0, 0.0, 1.0); // RGBA: черный
@@ -101,3 +119,4 @@ gl.clear(gl.COLOR_BUFFER_BIT);     // Очищаем буфер цвета
 // Рисуем треугольник
 gl.drawArrays(gl.TRIANGLES, 0, 3); // Тип примитива, начало, количество вершин
 gl.bindBuffer(gl.ARRAY_BUFFER, null);             // Разбинг буфера (чистота кода)
+
