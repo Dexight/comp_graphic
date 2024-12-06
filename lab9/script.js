@@ -8,7 +8,7 @@ let save_obj = document.getElementById('save-obj');
 let curFigure = 0;
 let curFunction = 0;
 let currentFigure = null;
-let useFileNormals = false; 
+let useFileNormals = true; 
 let lightPosX = document.getElementById('lightPosX').value;
 let lightPosY = document.getElementById('lightPosY').value;
 let lightPosZ = document.getElementById('lightPosZ').value;
@@ -50,11 +50,21 @@ function Triangulation(triangles, face)
 {
     for (let i = 0; i < face.length-2; i++) 
     {
-        triangle = [
-                    face[0],
-                    face[i+1],
-                    face[i+2] 
-                   ];
+        triangle = [[//вершины
+                    face[0][0],
+                    face[i+1][0],
+                    face[i+2][0] 
+                   ], 
+                   [//нормали
+                    face[0][1],
+                    face[i+1][1],
+                    face[i+2][1] 
+                   ],
+                   [//текстуры
+                    face[0][2],
+                    face[i+1][2],
+                    face[i+2][2]
+                   ]];
         triangles.push(triangle);
     }
 }
@@ -172,25 +182,32 @@ function draw()
         figure.faces.forEach((face, faceIndex) => {
             // триангуляция если > 3 точек
             triangles = [];
-            if (face.length > 3)
-                Triangulation(triangles, face);
-            else { triangles.push(face); }
+            
+            //if (face.length > 3)
+            Triangulation(triangles, face);
+            //else { triangles.push(face); }
 
             // Отсечение нелицевых и растеризация
-            triangles.forEach((t, tIndex) => {
-                const [v1, v2, v3] = t.map(index => transformedVertices[index]);
+            triangles.forEach((t, tIndex) => {//t = [v,n,t]
+                const [v1, v2, v3] = t[0].map(index => transformedVertices[index]);
                 let normal;
-                if (useFileNormals && figure.faceNormals[faceIndex]) {
-                    normal = figure.normals[figure.faceNormals[faceIndex][tIndex]];
-                } else {
+
+                if (useFileNormals && figure.normals[0] != null) 
+                {
+                    //normal = figure.normals[figure.faceNormals[faceIndex][tIndex]];
+                    normal = figure.normals[t[1][0]]
+                }
+                else 
+                {
                     normal = calculateNormal(v1, v2, v3);
                 }
-                const [pv1, pv2, pv3] = t.map(index => projectedVertices[index]);
+
+                const [pv1, pv2, pv3] = t[0].map(index => projectedVertices[index]);
                 const projectedNormal = calculateNormal(pv1, pv2, pv3);
                 const cosAngle = cosAngleBetween(projectedNormal, viewVector);
 
                 if (cosAngle < 0) { // Отсечение нелицевых граней
-                    visibleTriangles.push(t);
+                    visibleTriangles.push(t[0]);
                     [minZ, maxZ] = rasterizeTriangle([pv1, pv2, pv3], zBuffer, normalBuffer, width, height, minZ, maxZ, normal);
                 }
             })
@@ -714,8 +731,6 @@ function parseOBJ(data) {
     const faces = [];
     const normals = [];
     const textures = [];
-    const faceNormals = [];
-    const faceTextures = [];
 
     lines.forEach(line => {
         const parts = line.trim().split(/\s+/);
@@ -734,38 +749,39 @@ function parseOBJ(data) {
         } else if (parts[0] === 'f') {
             // Грань
             const face = [];
-            const faceNormal = [];
-            const faceTexture = [];
 
             parts.slice(1).forEach(part => {
                 const indices = part.split('/');
                 const vertexIndex = parseInt(indices[0], 10) - 1;
-                face.push(vertexIndex);
 
-                if (indices[1]) {
-                    const textureIndex = parseInt(indices[1], 10) - 1;
-                    faceTexture.push(textureIndex);
-                }
+                const vertex_constructor = [vertexIndex];
 
-                if (indices[2]) {
+                if (indices[2]) 
+                {
                     const normalIndex = parseInt(indices[2], 10) - 1;
-                    faceNormal.push(normalIndex);
+                    vertex_constructor.push(normalIndex);
                 }
+                else vertex_constructor.push(null)
+
+                if (indices[1]) 
+                {
+                    const textureIndex = parseInt(indices[1], 10) - 1;
+                    vertex_constructor.push(textureIndex);
+                }
+                else vertex_constructor.push(null)
+
+                face.push(vertex_constructor);
             });
 
             faces.push(face);
-            faceTextures.push(faceTexture);
-            faceNormals.push(faceNormal);
         }
     });
 
     customFigure = {
         vertices: vertices,
-        faces: faces,
         normals: normals,
         textures: textures,
-        faceNormals: faceNormals,
-        faceTextures: faceTextures,
+        faces: faces,
     };
 }
 
