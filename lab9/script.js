@@ -13,6 +13,17 @@ let lightPosX = document.getElementById('lightPosX').value;
 let lightPosY = document.getElementById('lightPosY').value;
 let lightPosZ = document.getElementById('lightPosZ').value;
 
+let showVertices = true;
+let showEdges = true;
+let showXYZ = true; //TEST
+let rotateX = 0, rotateY = 0, rotateZ = 0;
+let scale = 1;
+let translateX = 0, translateY = 0, translateZ = 0;
+let Ax = 0, Ay = 0, Az = 0;
+let Bx = 0, By = 0, Bz = 0;
+let angle = 0;
+let currentProjection = 'axonometric';
+
 document.getElementById('lightPosX').addEventListener('input', (e) => {
     lightPosX = parseFloat(e.target.value);
     draw();
@@ -327,10 +338,10 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
 function lerp(a, b, t) { return a + t * (b - a); }
 
 function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
-    // Если буфер пуст, заполнить белым цветом
+    // Если буфер пуст, заполнить серым цветом
     if (minZ === -Infinity || maxZ === Infinity) {
         console.log("Buffer is empty, filling with gray color.");
-        ctx.fillStyle = "rgb(255, 255, 255)";
+        ctx.fillStyle = "rgb(128, 128, 128)";
         ctx.fillRect(0, 0, width, height);
         return;
     }
@@ -356,7 +367,7 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
             const index = y * width + x;
             const z = zBuffer[index];
 
-            let shade = { r: 255, g: 255, b: 255 }; // Цвет по умолчанию
+            let shade = { r: 128, g: 128, b: 128 }; // Цвет по умолчанию
             if (z !== -Infinity) {
                 let normal = normalBuffer[index];
                 const normalLength = Math.hypot(normal[0], normal[1], normal[2]);
@@ -497,110 +508,6 @@ const xyz = {
         [0, 1], [0, 2], [0, 3]
     ]
 }
-
-let showVertices = true;
-let showEdges = true;
-let showXYZ = true; //TEST
-let rotateX = 0, rotateY = 0, rotateZ = 0;
-let scale = 1;
-let translateX = 0, translateY = 0, translateZ = 0;
-let Ax = 0, Ay = 0, Az = 0;
-let Bx = 0, By = 0, Bz = 0;
-let angle = 0;
-let currentProjection = 'axonometric';
-
-document.getElementById('perspectiveButton').addEventListener('click', () => {
-    currentProjection = 'perspective';
-    draw(); 
-});
-document.getElementById('axonometricButton').addEventListener('click', () => {
-    currentProjection = 'axonometric';
-    draw(); 
-});
-
-document.getElementById('rotateX').addEventListener('input', (e) => {
-    rotateX = parseFloat(e.target.value) * Math.PI / 180;
-    draw();
-});
-
-document.getElementById('rotateY').addEventListener('input', (e) => {
-    rotateY = parseFloat(e.target.value) * Math.PI / 180;
-    draw();
-});
-
-document.getElementById('rotateZ').addEventListener('input', (e) => {
-    rotateZ = parseFloat(e.target.value) * Math.PI / 180;
-    draw();
-});
-
-document.getElementById('translateX').addEventListener('input', (e) => {
-    translateX = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('translateY').addEventListener('input', (e) => {
-    translateY = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('translateZ').addEventListener('input', (e) => {
-    translateZ = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('scale').addEventListener('input', (e) => {
-    scale = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('showVertices').addEventListener('change', (e) => {
-    showVertices = e.target.checked;
-    draw();
-});
-
-document.getElementById('showEdges').addEventListener('change', (e) => {
-    showEdges = e.target.checked;
-    draw();
-});
-
-document.getElementById('AxInput').addEventListener('input', (e) => {
-    Ax = parseFloat(e.target.value);
-    draw();
-});
-document.getElementById('AyInput').addEventListener('input', (e) => {
-    Ay = parseFloat(e.target.value);
-    draw();
-});
-document.getElementById('AzInput').addEventListener('input', (e) => {
-    Az = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('BxInput').addEventListener('input', (e) => {
-    Bx = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('ByInput').addEventListener('input', (e) => {
-    By = parseFloat(e.target.value);
-    draw();
-});
-document.getElementById('BzInput').addEventListener('input', (e) => {
-    Bz = parseFloat(e.target.value);
-    draw();
-});
-
-document.getElementById('angleRotationLine').addEventListener('input', (e) => {
-    angle = parseFloat(e.target.value) * Math.PI / 180;
-    draw();
-});
-
-// Обработчики для чекбоксов
-document.getElementById('reflectXY').addEventListener('change', draw);
-
-document.getElementById('reflectXZ').addEventListener('change', draw);
-
-document.getElementById('reflectYZ').addEventListener('change', draw);
 
 // Перемножение матриц
 function multiplyMatrices(matrixA, matrixB) {
@@ -883,3 +790,98 @@ function drawLine(point1, point2, color){
 }
 
 draw();
+
+//======================Обработчики=====================
+
+document.getElementById('perspectiveButton').addEventListener('click', () => {
+    currentProjection = 'perspective';
+    draw(); 
+});
+document.getElementById('axonometricButton').addEventListener('click', () => {
+    currentProjection = 'axonometric';
+    draw(); 
+});
+
+document.getElementById('rotateX').addEventListener('input', (e) => {
+    rotateX = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+document.getElementById('rotateY').addEventListener('input', (e) => {
+    rotateY = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+document.getElementById('rotateZ').addEventListener('input', (e) => {
+    rotateZ = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+document.getElementById('translateX').addEventListener('input', (e) => {
+    translateX = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('translateY').addEventListener('input', (e) => {
+    translateY = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('translateZ').addEventListener('input', (e) => {
+    translateZ = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('scale').addEventListener('input', (e) => {
+    scale = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('showVertices').addEventListener('change', (e) => {
+    showVertices = e.target.checked;
+    draw();
+});
+
+document.getElementById('showEdges').addEventListener('change', (e) => {
+    showEdges = e.target.checked;
+    draw();
+});
+
+document.getElementById('AxInput').addEventListener('input', (e) => {
+    Ax = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AyInput').addEventListener('input', (e) => {
+    Ay = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('AzInput').addEventListener('input', (e) => {
+    Az = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('BxInput').addEventListener('input', (e) => {
+    Bx = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('ByInput').addEventListener('input', (e) => {
+    By = parseFloat(e.target.value);
+    draw();
+});
+document.getElementById('BzInput').addEventListener('input', (e) => {
+    Bz = parseFloat(e.target.value);
+    draw();
+});
+
+document.getElementById('angleRotationLine').addEventListener('input', (e) => {
+    angle = parseFloat(e.target.value) * Math.PI / 180;
+    draw();
+});
+
+// Обработчики для чекбоксов
+document.getElementById('reflectXY').addEventListener('change', draw);
+
+document.getElementById('reflectXZ').addEventListener('change', draw);
+
+document.getElementById('reflectYZ').addEventListener('change', draw);
