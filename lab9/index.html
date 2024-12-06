@@ -9,7 +9,7 @@
             margin: 0;
             display: flex;
             flex-direction: row;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-evenly;
             height: 100vh;
             background-color: #f0f0f0;
@@ -76,14 +76,7 @@
             <div id="figure-list">
                 <select id="figure-select">
                     <option value="0" disabled selected>Выберите фигуру</option>
-                    <option value="1">Тетраэдр</option>
-                    <option value="2">Куб</option>
-                    <option value="3">Октаэдр</option>
-                    <option value="4">Икосаэдр</option>
-                    <option value="5">Додекаэдр</option>
-                    <option value="6">График</option>
-                    <option value="7">Фигура вращения</option>
-                    <option value="8">Загрузка фигуры</option>
+                    <option value="1">Загрузка фигуры</option>
                 </select>
             </div>
         </div>
@@ -163,67 +156,6 @@
 
         <button id="perspectiveButton">Перспективная проекция</button>
         <button id="axonometricButton">Аксонометрическая проекция</button>
-    </div>
-    <div class = "controls2" id = "surfacePanel">
-        <label>xMin</label>
-        <input type="number" id="surfaceXmin"  value = -1>
-
-        <br>
-
-        <label>xMax</label>
-        <input type="number" id="surfaceXmax"  value = 1>
-
-        <br><br>
-
-        <label>yMin</label>
-        <input type="number" id="surfaceYmin"  value = -1>
-
-        <br>
-
-        <label>yMax</label>
-        <input type="number" id="surfaceYmax"  value = 1>
-        
-        <br>
-
-        <label>Количество разбиений</label>
-        <input type="number" id="surfaceSegments"  value = 30>
-        
-        <br>
-
-        <label>Функция</label>
-        
-        <div id="functions-list">
-            <select id="function-select">
-                <option value="0" selected>x*y</option>
-                <option value="1">-√(x²+²y)</option>
-                <option value="2">x²+y²</option>
-                <option value="3">sin(x)*cos(y)</option>
-                <option value="4">sin(x)+cos(y)</option>
-                <option value="5">5*(cos(x²+y²+1)/(x²+y²+1)+0.1)</option>
-                <option value="6">сos(x²+y²)/(x²+y²+1)</option>
-            </select>
-        </div>
-        
-        <label>Коэфциент функции:</label>
-        <input type="number" id="Zcoef" min="-100" max="100" step="1" value="1">
-        
-        <br>
-        
-    </div>
-
-    <div class = "controls2" id = "rotationFigurePanel">
-        <label>Генерация фигуры вращения:</label>
-        <br>
-            Образующие точки(x1, y1, z1; x2, y2, z2; ...):<input type="text" id="formingPoints" value="1, 2, 3; 2, 0, 0; 3, 0, 0">
-        <br>
-        <label>Ось вращения: <select id="rotationAxis">
-            <option value="0">X</option>
-            <option value="1">Y</option>
-            <option value="2">Z</option>
-        </select></label>
-        <br><br>
-        <label>Число разбиений: <input type="number" id="numDivisions" value="10"></label>
-        <br>
     </div>
 
     <script src="script.js"></script>

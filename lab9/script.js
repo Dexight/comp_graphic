@@ -5,9 +5,6 @@ const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
 let load_obj = document.getElementById('load-obj');
 let save_obj = document.getElementById('save-obj');
-let functionSelect = document.getElementById('function-select');
-let surfacePanel = document.getElementById('surfacePanel');
-let rotationFigurePanel = document.getElementById('rotationFigurePanel');
 let curFigure = 0;
 let curFunction = 0;
 let currentFigure = null;
@@ -86,7 +83,8 @@ function cosAngleBetween(vector1, vector2) {
     return dotProduct(vector1, vector2) / (magnitude(vector1) * magnitude(vector2));
 }
 
-function draw() {
+function draw() 
+{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let zBuffer = Array(width * height).fill(-Infinity);
     let normalBuffer = new Array(width * height).fill(null);
@@ -117,10 +115,6 @@ function draw() {
     }
 
     let figure;
-    surfacePanel.style.display = 'none';
-    let showSurfacePanel = false;
-    rotationFigurePanel.style.display = 'none';
-    let showRotationFigurePanel = false;
     load_obj.style.display = "none";
     save_obj.style.display = "block";
 
@@ -133,20 +127,7 @@ function draw() {
                 return; 
             }
             break;
-        case 1: figure = tetrahedron; break;
-        case 2: figure = cube; break;
-        case 3: figure = octahedron; break;
-        case 4: figure = icosahedron; break;
-        case 5: figure = dodecahedron; break;
-        case 6: bs = buildSurface(); 
-                figure = {vertices: bs.surfaceVertices,faces: bs.surfaceFaces,}; 
-                showSurfacePanel = true; 
-                break;
-        case 7: rf = buildRotationFigure();
-                figure = {vertices: rf.vertices,faces: rf.faces};
-                showRotationFigurePanel = true;
-                break;
-        case 8: load_obj.style.display = "block";
+        case 1: load_obj.style.display = "block";
                 save_obj.style.display = "none";
                 return;
         default: return;
@@ -268,9 +249,7 @@ function draw() {
             });
         }
     }
-    surfacePanel.style.display = showSurfacePanel? 'flex':'none';
-    rotationFigurePanel.style.display = showRotationFigurePanel?'flex':'none';
-    load_obj.style.display = showSurfacePanel? 'none' : 'inline'
+    load_obj.style.display = 'inline'
 }
 
 function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ, maxZ, normal) 
@@ -502,159 +481,6 @@ function saveFigureToFile() {
     return objData;
 }
 
-//=========7.2==========
-let formingPoints = [[1, 2, 3], [2, 0, 0], [3, 0, 0]];
-let numDivisions = 10;
-let rotationAxis = 0;
-
-function buildRotationFigure() {
-    let figureVertices = [];
-    let figureFaces = [];
-    let angleStep = (numDivisions !== 0) ? 2 * Math.PI / numDivisions : 0;
-    console.log('forming points: ', formingPoints);
-    // Создание вершин вращаемой фигуры
-    for (let i = 0; i <= numDivisions; i++) {
-        const angle = i * angleStep;
-
-        formingPoints.forEach(([x, y, z]) => {
-            let rotatedPoint;
-
-            // Вращаем точку вокруг выбранной оси
-            switch(rotationAxis) {
-                case 0: // Вращение вокруг оси X
-                    rotatedPoint = multiplyMatrixAndPoint(getRotationXMatrix(angle), [x, y, z, 1]);
-                    break;
-                case 1: // Вращение вокруг оси Y
-                    rotatedPoint = multiplyMatrixAndPoint(getRotationYMatrix(angle), [x, y, z, 1]);
-                    break;
-                case 2: // Вращение вокруг оси Z
-                    rotatedPoint = multiplyMatrixAndPoint(getRotationZMatrix(angle), [x, y, z, 1]);
-                    break;
-                default:
-                    rotatedPoint = [x, y, z, 1];
-                    break;
-            }
-
-            // Добавляем только x, y, z координаты вершины
-            figureVertices.push([rotatedPoint[0], rotatedPoint[1], rotatedPoint[2]]);
-        });
-    }
-    console.log('vertices: ', figureVertices);
-
-    // Создание граней
-    const pointsPerDivision = formingPoints.length;
-    for (let i = 0; i < numDivisions; i++) {
-        const start = i * pointsPerDivision;
-        const nextStart = (i + 1) * pointsPerDivision;
-
-        for (let j = 0; j < pointsPerDivision - 1; j++) {
-            figureFaces.push([
-                start + j,
-                start + j + 1,
-                nextStart + j + 1,
-                nextStart + j
-            ]);
-        }
-    }
-    console.log('vertices: ', figureFaces);
-
-    return { vertices: figureVertices, faces: figureFaces };
-}
-
-//обработчик для ввода образующей
-document.getElementById('formingPoints').addEventListener('input', (e)=>{
-    const formingPointsInput = e.target.value;
-    formingPoints = formingPointsInput.split(';').map(point => {const [x, y, z] = point.split(',').map(parseFloat);
-        return [x, y, z];
-    })
-    draw();
-});
-
-//Обработчик для ввода числа разбиений
-document.getElementById('numDivisions').addEventListener('input', (e)=>{
-    numDivisions = parseFloat(e.target.value);
-    draw();
-});
-
-let rotationAxisSelect = document.getElementById('rotationAxis'); // выбор оси для вращения
-rotationAxisSelect.addEventListener('change', (e) => {
-    rotationAxis = parseInt(e.target.value);
-    draw();
-});
-
-//====================
-
-//========7.3=========
-let Zcoef = 1;
-
-let xMin = -1, xMax = 1;
-let yMin = -1, yMax = 1;
-let segments = 30;
-
-// Функция для задания сегмента поверхности
-function defaultSegment(x, y) {return x*y;} 
-function f1(x, y) { return -Math.sqrt(x*x+y*y); }
-function f2 (x, y) { return x*x+y*y; }
-function f3 (x, y) { return Math.sin(x) * Math.cos(y); }
-function f4 (x, y) { return Math.sin(x) + Math.cos(y); }
-function f5 (x, y) { return 5*(Math.cos(x*x+y*y+1)/(x*x+y*y+1)+0.1); }
-function f6 (x, y) { return Math.cos(x*x+y*y)/(x*x+y*y+1); }
-
-function buildSurface() {
-    
-    let surfaceVertices = [];
-    let surfaceFaces = [];
-
-    const dx = (xMax - xMin) / segments;
-    const dy = (yMax - yMin) / segments;
-
-    // Создаём вершины
-    for (let i = 0; i <= segments; i++) {
-        for (let j = 0; j <= segments; j++) {
-            const x = xMin + i * dx;
-            const y = yMin + j * dy;
-            switch(curFunction)
-            {
-                case 0: z = defaultSegment(x, y); break;
-                case 1: z = f1(x, y); break;
-                case 2: z = f2(x, y); break;
-                case 3: z = f3(x, y); break;
-                case 4: z = f4(x, y); break;
-                case 5: z = f5(x, y); break;
-                case 6: z = f6(x, y); break;
-                default: z = defaultSegment(x, y); break;
-            }
-            z = z*Zcoef;
-            surfaceVertices.push([x, y, z]);
-        }
-    }
-
-    // Создаём грани
-    for (let i = 0; i < segments; i++) {
-        for (let j = 0; j < segments; j++) {
-            const idx = i * (segments + 1) + j;
-            const nextRowIdx = (i + 1) * (segments + 1) + j;
-            surfaceFaces.push([idx, idx + 1, nextRowIdx + 1, nextRowIdx]);
-        }
-    }
-
-    return { surfaceVertices, surfaceFaces }
-}
-document.getElementById('surfaceXmin').addEventListener('input', (e) => { xMin = parseFloat(e.target.value); draw();});
-document.getElementById('surfaceXmax').addEventListener('input', (e) => { xMax = parseFloat(e.target.value); draw();});
-document.getElementById('surfaceYmin').addEventListener('input', (e) => { yMin = parseFloat(e.target.value); draw();});
-document.getElementById('surfaceYmax').addEventListener('input', (e) => { yMax = parseFloat(e.target.value); draw();});
-document.getElementById('surfaceSegments').addEventListener('input', (e) => { segments = parseInt(e.target.value); draw();});
-document.getElementById('Zcoef').addEventListener('input', (e) => {Zcoef = parseFloat(e.target.value); draw();});
-// Обработчик выбора функции из выпадающего списка
-functionSelect.addEventListener('change', (e) => {
-    curFunction = parseInt(e.target.value);
-    document.getElementById("rotateX").value = "270";
-    rotateX = 270*Math.PI/180;
-    draw();
-});
-//=====================
-
 // Обработчик выбора фигуры из выпадающего списка
 figureSelect.addEventListener('change', (e) => {
     curFigure = parseInt(e.target.value);
@@ -672,158 +498,8 @@ const xyz = {
     ]
 }
 
-const cube = {
-    //вершины
-    vertices: [
-        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], // Точки лицевой части
-        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]    // Точки задней части
-    ],
-    //грани (по индексам точек из vertices)
-    faces: [
-        [0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], 
-        [2, 3, 7, 6], [0, 3, 7, 4], [1, 2, 6, 5]
-    ]
-};
-
-const tetrahedron = {
-    vertices: [
-        [-1, -1, -1], [-1, 1, 1], [1, -1, 1], [1, 1, -1]
-    ],
-
-    faces: [
-        [0, 1, 3], [1, 2, 3], [0, 2, 3], [0, 1, 2]
-    ]
-}
-
-
-const octahedron = {
-    vertices:[
-        [-1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 0, 0], [0, -1, 0], [0, 0, -1]
-    ],
-
-    faces:[
-        [1, 0, 2], [1, 2, 3], [1, 3, 5], [1, 5, 0], //верхняя половина
-        [4, 0, 5], [4, 0, 2], [4, 2, 3], [4, 3, 5] //нижняя половина
-    ]
-}
-
-//Икосаэдр-----
-
-//вычислим точки на окружности с центром в (0, 0, 0)
-
-radians = (-72 * Math.PI) / 180;
-
-p0 = {x:0, y:0, z:1};
-// вычисляем первые 2 точки
-p1 = {x: Math.sin(72 * Math.PI / 180), y:0, z: Math.cos(72 * Math.PI / 180)};
-p2 = {x: Math.sin(36 * Math.PI / 180), y:0, z: -Math.cos(36 * Math.PI / 180)};
-// другие точки - просто зеркалим по оси X
-p3 = {x: -p2.x, y:0, z: p2.z};
-p4 = {x: -p1.x, y:0, z: p1.z};
-
-function pointDistance(p1, p2) 
-{
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const dz = p2.z - p1.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-dist = pointDistance({x:0, y:0, z:0}, {x:0, y:0.5, z:1});//для верхней и нижней точек
-
-const icosahedron = {
-    vertices: [
-        //верхняя половина
-
-        [0, dist, 0],//верхняя точка
-        [p0.x, p0.y+0.5, p0.z], [p1.x, p1.y+0.5, p1.z], [p2.x, p2.y+0.5, p2.z], [p3.x, p3.y+0.5, p3.z], [p4.x, p4.y+0.5, p4.z],//пятиугольник
-        //нижняя половина
-        
-        [p0.x, p0.y-0.5, -p0.z], [p1.x, p1.y-0.5, -p1.z], [p2.x, p2.y-0.5, -p2.z], [p3.x, p3.y-0.5, -p3.z], [p4.x, p4.y-0.5, -p4.z],//пятиугольник (переворачиваем верхний)
-        [0, -dist, 0]//нижняя точка
-    ],
-    faces: [
-        [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 1],//верхняя шляпка
-        [1, 9, 8], [1, 8, 2], [8, 2, 7], [2, 7, 3], [7, 3, 6], [3, 6, 4], [4, 6, 10], [4, 5, 10], [5, 9, 10], [1, 5, 9],
-        [11, 9, 8], [11, 8, 7], [11, 7, 6], [11, 6, 10], [11, 10, 9]//нижняя шляпка
-    ]
-}
-
-//--------------
-//Додекаэдр-----
-
-function findIntersection(segment1, segment2) {
-    const [p1, p2] = segment1;
-    const [q1, q2] = segment2;
-
-    // Вектор p1p2
-    const v1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
-    // Вектор q1q2
-    const v2 = [q2[0] - q1[0], q2[1] - q1[1], q2[2] - q1[2]];
-
-    // Вектор p1q1
-    const w = [q1[0] - p1[0], q1[1] - p1[1], q1[2] - p1[2]];
-
-    // Скалярное произведение
-    const crossV1V2 = [
-        v1[1] * v2[2] - v1[2] * v2[1],
-        v1[2] * v2[0] - v1[0] * v2[2],
-        v1[0] * v2[1] - v1[1] * v2[0]
-    ];
-
-    const denom = crossV1V2[0] ** 2 + crossV1V2[1] ** 2 + crossV1V2[2] ** 2;
-    const crossWv2 = [
-        w[1] * v2[2] - w[2] * v2[1],
-        w[2] * v2[0] - w[0] * v2[2],
-        w[0] * v2[1] - w[1] * v2[0]
-    ];
-
-    const t = (crossWv2[0] * crossV1V2[0] + crossWv2[1] * crossV1V2[1] + crossWv2[2] * crossV1V2[2]) / denom;
-
-    // Найдём точку пересечения на отрезке 1
-    return [
-        p1[0] + t * v1[0],
-        p1[1] + t * v1[1],
-        p1[2] + t * v1[2]
-    ];
-}
-
-let dots = [];
-
-icosahedron.faces.forEach(face => {
-    face_coordinates = [];//точки треугольника
-
-    for (let i = 0; i < 3; i++) face_coordinates.push(icosahedron.vertices[face[i]]);
-
-    ab = [face_coordinates[0], face_coordinates[1]];
-    bc = [face_coordinates[1], face_coordinates[2]];
-
-    ab_center = [(ab[0][0] + ab[1][0])/2, (ab[0][1] + ab[1][1])/2, (ab[0][2] + ab[1][2])/2];
-    bc_center = [(bc[0][0] + bc[1][0])/2, (bc[0][1] + bc[1][1])/2, (bc[0][2] + bc[1][2])/2];
-
-    c_median_ab = [face_coordinates[2], ab_center];
-    a_median_bc = [face_coordinates[0], bc_center];
-
-    dot_intersect = findIntersection(c_median_ab, a_median_bc);
-    dots.push(dot_intersect);
-});
-
-const dodecahedron = {
-    vertices: [
-        dots[0], dots[1], dots[2], dots[3], dots[4], dots[5], dots[6], dots[7], dots[8], dots[9], 
-        dots[10], dots[11], dots[12], dots[13], dots[14], dots[15], dots[16], dots[17], dots[18], dots[19]
-    ],
-
-    faces:[
-        [0, 1, 2, 3, 4], [1, 0, 6, 7, 8], [0, 6, 5, 14, 4], [4, 14, 13, 12, 3], [3, 12, 11, 10, 2], [2, 10, 9, 8, 1],//низ
-        [7, 8, 9, 17, 16], [7, 6, 5, 15, 16], [5, 14, 13, 19, 15], [13, 12, 11, 18, 19], [11, 10, 9, 17, 18], [19, 18, 17, 16, 15]//верх
-    ]
-}
-//--------------
-
 let showVertices = true;
 let showEdges = true;
-let showCube = false;
 let showXYZ = true; //TEST
 let rotateX = 0, rotateY = 0, rotateZ = 0;
 let scale = 1;
@@ -1185,6 +861,7 @@ function parseOBJ(data) {
         faceTextures: faceTextures,
     };
 }
+
 //функция для рисования прямой
 function drawLine(point1, point2, color){
     let project = projectPerspective; 
