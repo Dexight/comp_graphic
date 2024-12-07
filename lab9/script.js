@@ -397,7 +397,7 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
                     // Вычисление направления света от источника к текущему пикселю
                     const lightDir = [
                         lightPos[0] - x,
-                        lightPos[1] - y,
+                        lightPos[1] - (-y),
                         lightPos[2] - z
                     ];
 
