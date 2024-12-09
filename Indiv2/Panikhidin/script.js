@@ -2,12 +2,46 @@ canvas = document.getElementById('canvas');
 ctx = canvas.getContext("2d");
 pixelsData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+//Установка значенияя пикселя
+function setPixel(x, y, col){
+    //нормируем координаты (чтоб начало координат в центре было)
+    if(col == undefined)
+        alert('setPixel: Ошибка: Цвет не определен');
+    console.log(col)    
+    x = canvas.width / 2 + x;
+    y = canvas.height / 2 - y - 1;
+
+    if( x < 0 || x > canvas.width || y < 0 || y > canvas.height){
+        alert('setPixel: Ошибка: выход за границы канвы');
+    }
+
+    let offset = 4*(x + y*pixelsData.width);
+    if (offset < 0 || offset + 3 >= pixelsData.data.length) {
+        alert('setPixel: Ошибка: индекс offset выходит за границы массива');
+        return;
+    }
+    pixelsData.data[offset] = col.r;
+    pixelsData.data[offset+1] = col.g;
+    pixelsData.data[offset+2] = col.b;
+    pixelsData.data[offset+3] = 255;
+}
+
+//Обновление канваса
+function UpdateCanvas(){
+    ctx.putImageData(pixelsData, 0, 0);
+}
+
+//Очистка канваса
+function clearCanvas(){
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+}
+
 // Функция-конструктор для цвета
 function Color(r,g,b){
     return {
-        r,
-        g,
-        b,
+        r: r,
+        g: g,
+        b: b,
         add: function(otherColor) {return new Color(r + otherColor.r, g + otherColor.g, b + otherColor.b);}, // сложение с другим объектом цвета
         mult: function(num) {return new Color(r*num, g*num, b*num)}  // умножение цвета на заданное число
     };
@@ -16,9 +50,9 @@ function Color(r,g,b){
 //Функция-конструктор для вектора
 function Vector(x, y, z){
     return {
-        x,
-        y, 
-        z,
+        x: x,
+        y: y, 
+        z: z,
         add: function(otherVector){return new Vector(x + otherVector.x, y + otherVector.y, z + otherVector.z);},
         sub: function(otherVector){return new Vector(x - otherVector.x, y - otherVector.y, z - otherVector.z)},
         dot: function(otherVector){return x * otherVector.x + y*otherVector.y + z*otherVector.z;},
@@ -32,7 +66,6 @@ function Sphere(){
     //TODO
 }
 
-
 // логи для тестрования функций: 
 
 /*
@@ -41,4 +74,13 @@ console.log(Color(0.3, 0.5, 0.7).add(Color(0.2, 0.3, 0.3)))
 console.log(Vector(1,1,1).dot(Vector(2,2,2)))
 console.log(Vector(1,1,1).mult(0.5))
 console.log(Vector(1,1,1).len())
+
+col = Color(0,0,255);
+console.log(col)
+for(let i = 0; i < 20; i++)
+    setPixel(i,i,col);
+
+UpdateCanvas();
+
+
 */
