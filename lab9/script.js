@@ -3,6 +3,8 @@ const width = canvas.width;
 const height = canvas.height;
 const ctx = canvas.getContext('2d');
 let figureSelect = document.getElementById('figure-select');
+let shadingList = document.getElementById('shading-list');
+let shadingSelect = document.getElementById('shading-select');
 let load_obj = document.getElementById('load-obj');
 let save_obj = document.getElementById('save-obj');
 let curFigure = 0;
@@ -23,6 +25,8 @@ let Ax = 0, Ay = 0, Az = 0;
 let Bx = 0, By = 0, Bz = 0;
 let angle = 0;
 let currentProjection = 'axonometric';
+let curShading = 0;//по-умолчанию плоский
+let visibleTriangles;
 
 document.getElementById('lightPosX').addEventListener('input', (e) => {
     lightPosX = parseFloat(e.target.value);
@@ -104,11 +108,13 @@ function cosAngleBetween(vector1, vector2) {
     return dotProduct(vector1, vector2) / (magnitude(vector1) * magnitude(vector2));
 }
 
+
 function draw() 
 {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let zBuffer = Array(width * height).fill(-Infinity);
     let normalBuffer = new Array(width * height).fill(null);
+    let colorBuffer = new Array(width * height).fill(null);
 
     let project = projectPerspective; 
     let viewVector = [0, 0, 1];
@@ -137,13 +143,14 @@ function draw()
 
     let figure;
     load_obj.style.display = "none";
-    save_obj.style.display = "block";
+    save_obj.style.display = "none";
 
     switch(curFigure) {
         case 0:  
             if (customFigure) {
                 figure = customFigure; 
                 load_obj.style.display = "block";
+                save_obj.style.display = "block";
             } else {
                 return; 
             }
@@ -172,29 +179,33 @@ function draw()
             });
 
         const projectedVertices = transformedVertices.map(vertex => project([vertex[0], vertex[1], vertex[2]]));
-        console.log(projectedVertices);
+        //console.log(projectedVertices);
                 
         // грани
-        let visibleTriangles = [];
+        visibleTriangles = [];
         let minZ = Infinity;
         let maxZ = -Infinity;
 
+        // Триангуляция, отсечение нелицевых и растеризация
         figure.faces.forEach((face, faceIndex) => {
             // триангуляция если > 3 точек
             triangles = [];
             
-            //if (face.length > 3)
             Triangulation(triangles, face);
-            //else { triangles.push(face); }
 
-            // Отсечение нелицевых и растеризация
             triangles.forEach((t, tIndex) => {//t = [v,n,t]
                 const [v1, v2, v3] = t[0].map(index => transformedVertices[index]);
                 let normal;
 
                 if (useFileNormals && figure.normals[0] != null) 
                 {
-                    //normal = figure.normals[figure.faceNormals[faceIndex][tIndex]];
+                    //normal1v = figure.normals[t[1][0]]
+                    //normal2v = figure.normals[t[1][1]]
+                    //normal3v = figure.normals[t[1][2]]
+                    //xnorm = normal1v[0] + normal2v[0] + normal3v[0]
+                    //ynorm = normal1v[1] + normal2v[1] + normal3v[1]
+                    //znorm = normal1v[2] + normal2v[2] + normal3v[2]
+                    //normal = [xnorm, ynorm, znorm]
                     normal = figure.normals[t[1][0]]
                 }
                 else 
@@ -202,19 +213,24 @@ function draw()
                     normal = calculateNormal(v1, v2, v3);
                 }
 
+                //нормализация
+                normalization_value = Math.sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2])
+                normal.forEach(coord => coord/normalization_value)
+
                 const [pv1, pv2, pv3] = t[0].map(index => projectedVertices[index]);
                 const projectedNormal = calculateNormal(pv1, pv2, pv3);
                 const cosAngle = cosAngleBetween(projectedNormal, viewVector);
 
                 if (cosAngle < 0) { // Отсечение нелицевых граней
-                    visibleTriangles.push(t[0]);
-                    [minZ, maxZ] = rasterizeTriangle([pv1, pv2, pv3], zBuffer, normalBuffer, width, height, minZ, maxZ, normal);
+                    visibleTriangles.push(t);
+                    [minZ, maxZ] = rasterizeTriangle([[pv1, pv2, pv3], t[1].map(index => customFigure.normals[index])], zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal);
                 }
             })
         });
 
-
-        renderDepthBuffer(zBuffer, normalBuffer, minZ.toFixed(5), maxZ.toFixed(5));
+        renderDepthBufferSimple(zBuffer, normalBuffer, colorBuffer, minZ.toFixed(5), maxZ.toFixed(5));
+        
+        //далее - опциональные приколюхи
 
         // отображение триангуляции
         if (showEdges)
@@ -222,15 +238,15 @@ function draw()
             ctx.strokeStyle = 'pink';
             ctx.beginPath();
             visibleTriangles.forEach(t=>{
-                for (let i = 0; i < t.length; i++)
+                for (let i = 0; i < t[0].length; i++)
                 {
-                    const [x1, y1] = projectedVertices[t[i]];
-                    const [x2, y2] = projectedVertices[t[(i + 1) % t.length]];
+                    const [x1, y1] = projectedVertices[t[0][i]];
+                    const [x2, y2] = projectedVertices[t[0][(i + 1) % t[0].length]];
                     
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                 }
-            ctx.stroke();
+                ctx.stroke();
             })
         }
 
@@ -280,21 +296,25 @@ function draw()
     load_obj.style.display = 'inline'
 }
 
-function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ, maxZ, normal) 
+function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal) 
 {
-    const [v0, v1, v2] = triangle; // Три вершины треугольника (x, y, z)
+    const [vn0, vn1, vn2] = [[triangle[0][0], triangle[1][0]], [triangle[0][1], triangle[1][1]], [triangle[0][2], triangle[1][2]]]; // [[Три вершины треугольника (x, y, z)], [Их нормали]]
 
     // Сортировка по Y-координате для упрощения
-    const [p0, p1, p2] = [v0, v1, v2].sort((a, b) => a[1] - b[1]);
-
+    const [pn0, pn1, pn2] = [vn0, vn1, vn2].sort((a, b) => a[0][1] - b[0][1]);
+    const [p0, p1, p2, n0, n1, n2] = [pn0[0], pn1[0], pn2[0], pn0[1], pn1[1], pn2[1]]//pN - это точки, nN - их нормали
+    
     // Вычисление границ по Y
     const yMin = Math.max(Math.ceil(p0[1]), 0);
     const yMax = Math.min(Math.floor(p2[1]), height - 1);
 
+    //Вычисление цвета для Гуро
+    const [color0, color1, color2] = calculateColorGuro(n0, n1, n2);
+
     for (let y = yMin; y <= yMax; y++) 
     {
         // Интерполяция X-координат и Z для текущей строки
-        let xStart, xEnd, zStart, zEnd;
+        let xStart, xEnd, zStart, zEnd, normalStart, normalEnd, cStart, cEnd;
 
         if (y < p1[1]) // Верхняя половина треугольника 
         { 
@@ -304,6 +324,12 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
             zStart = lerp(p0[2], p1[2], t0);
             xEnd = lerp(p0[0], p2[0], t1);
             zEnd = lerp(p0[2], p2[2], t1);
+
+            normalStart = normal_lerp(n0, n1, t0);
+            normalEnd = normal_lerp(n0, n2, t1);
+
+            cStart = color_lerp(color0, color1, t0);
+            cEnd = color_lerp(color0, color2, t1);
         }
         else // Нижняя половина треугольника
         { 
@@ -313,6 +339,12 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
             zStart = lerp(p1[2], p2[2], t0);
             xEnd = lerp(p0[0], p2[0], t1);
             zEnd = lerp(p0[2], p2[2], t1);
+        
+            normalStart = normal_lerp(n0, n1, t0);
+            normalEnd = normal_lerp(n0, n2, t1);
+        
+            cStart = color_lerp(color0, color1, t0);
+            cEnd = color_lerp(color0, color2, t1);
         }
 
         // Обеспечение порядка X
@@ -320,6 +352,8 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
         {
             [xStart, xEnd] = [xEnd, xStart];
             [zStart, zEnd] = [zEnd, zStart];
+            [normalStart, normalEnd] = [normalEnd, normalStart];
+            [cStart, cEnd] = [cEnd, cStart]
         }
 
         // Округление X для пиксельных границ
@@ -332,6 +366,9 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
             const t = (x - xStart) / (xEnd - xStart);
             const z = lerp(zStart, zEnd, t);
 
+            // Интерполяция нормали
+            calculated_normal = normal_lerp(normalStart, normalEnd, t);
+
             // Индекс в Z-буфере
             const index = Math.floor(y) * width + Math.floor(x);
 
@@ -339,7 +376,9 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
             if (z > zBuffer[index]) 
             {
                 zBuffer[index] = z;
-                normalBuffer[index] = [...normal];
+                if (curShading === 0)          normalBuffer[index] = [...normal]
+                else if (curShading === 2)     normalBuffer[index] = calculated_normal;//Phong
+                else                          colorBuffer[index] = color_lerp(cStart, cEnd, t);//Guro
             }
 
             // Обновление z границ;
@@ -353,8 +392,46 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, width, height, minZ,
 
 // Линейная интерполяция
 function lerp(a, b, t) { return a + t * (b - a); }
+function normal_lerp(v1, v2, t) { return v1.map((val, i) => val + t * (v2[i] - val)); }
+function color_lerp(c0, c1, t) {
+    return {
+        r: lerp(c0.r, c1.r, t),
+        g: lerp(c0.g, c1.g, t),
+        b: lerp(c0.b, c1.b, t)
+    };
+}
 
-function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
+function calculateColorGuro(n0, n1, n2)
+{
+    const lightPos = [lightPosX, lightPosY, lightPosZ];
+    const baseColor = { r: 255, g: 255, b: 255 }; 
+    const ambientIntensity = 0.3;
+    
+    const lightDir0 = [
+        lightPos[0] - n0[0],
+        lightPos[1] - n0[1],//(-n0[1]),
+        lightPos[2] - n0[2]
+    ];
+    const lightDir1 = [
+        lightPos[0] - n1[0],
+        lightPos[1] - n1[1],//(-n1[1]),
+        lightPos[2] - n1[2]
+    ];
+    const lightDir2 = [
+        lightPos[0] - n2[0],
+        lightPos[1] - n2[1],//(-n2[1]),
+        lightPos[2] - n2[2]
+    ];
+    const intensity0 = calculateLambert(n0, lightDir0, ambientIntensity);
+    const intensity1 = calculateLambert(n1, lightDir1, ambientIntensity);
+    const intensity2 = calculateLambert(n2, lightDir2, ambientIntensity);
+    const shade0 = applyShading(baseColor, intensity0);
+    const shade1 = applyShading(baseColor, intensity1);
+    const shade2 = applyShading(baseColor, intensity2);
+    return [shade0, shade1, shade2];
+}
+
+function renderDepthBufferSimple(zBuffer, normalBuffer, colorBuffer, minZ, maxZ) {
     // Если буфер пуст, заполнить серым цветом
     if (minZ === -Infinity || maxZ === Infinity) {
         console.log("Buffer is empty, filling with gray color.");
@@ -372,50 +449,83 @@ function renderDepthBuffer(zBuffer, normalBuffer, minZ, maxZ) {
     // Массив для хранения данных изображения
     const imageData = ctx.createImageData(width, height);
     const data = imageData.data;
+    if (curShading !== 1)
+    {
+        const lightPos = [lightPosX, lightPosY, lightPosZ];
+        //console.log('lightPos:', lightPos);
 
-    const lightPos = [lightPosX, lightPosY, lightPosZ];
-    console.log('lightPos:', lightPos);
+        const baseColor = { r: 255, g: 255, b: 255 }; 
+        const ambientIntensity = 0.3; 
 
-    const baseColor = { r: 255, g: 0, b: 0 }; 
-    const ambientIntensity = 0.3; 
+        for (let y = 0; y < height; y++) 
+        {
+            for (let x = 0; x < width; x++) 
+            {
+                const index = y * width + x;
+                const z = zBuffer[index];
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const index = y * width + x;
-            const z = zBuffer[index];
+                let shade = { r: 128, g: 128, b: 128 }; // Цвет по умолчанию
+                if (z !== -Infinity) 
+                {
+                    let normal = normalBuffer[index];
+                    //const normalLength = Math.hypot(normal[0], normal[1], normal[2]);
+                    
+                    //normal = [
+                    //    normal[0] / normalLength,
+                    //    normal[1] / normalLength,
+                    //    normal[2] / normalLength
+                    //];
 
-            let shade = { r: 128, g: 128, b: 128 }; // Цвет по умолчанию
-            if (z !== -Infinity) {
-                let normal = normalBuffer[index];
-                const normalLength = Math.hypot(normal[0], normal[1], normal[2]);
-                normal = [
-                    normal[0] / normalLength,
-                    normal[1] / normalLength,
-                    normal[2] / normalLength
-                ];
-                if (normal) {
-                    // Вычисление направления света от источника к текущему пикселю
-                    const lightDir = [
-                        lightPos[0] - x,
-                        lightPos[1] - (-y),
-                        lightPos[2] - z
-                    ];
+                    if (normal) 
+                    {
+                        // Вычисление направления света от источника к текущему пикселю
+                        const lightDir = [
+                            lightPos[0] - x,
+                            lightPos[1] - (-y),
+                            lightPos[2] - z
+                        ];
 
-                    const intensity = calculateLambert(normal, lightDir, ambientIntensity);
-                    shade = applyShading(baseColor, intensity);
+                        const intensity = calculateLambert(normal, lightDir, ambientIntensity);
+                        shade = applyShading(baseColor, intensity);
 
-                    //console.log(`Pixel (${x}, ${y}): z=${z}, normal=${normal}, lightDir=${lightDir}, intensity=${intensity}, shade=${shade}`);
+                        //console.log(`Pixel (${x}, ${y}): z=${z}, normal=${normal}, lightDir=${lightDir}, intensity=${intensity}, shade=${shade}`);
+                    } 
                 } 
-            } 
 
-            const pixelIndex = (y * width + x) * 4;
-            data[pixelIndex] = shade.r;        // Красный
-            data[pixelIndex + 1] = shade.g;    // Зеленый
-            data[pixelIndex + 2] = shade.b;    // Синий
-            data[pixelIndex + 3] = 255;        // Альфа
+                const pixelIndex = (y * width + x) * 4;
+                data[pixelIndex] = shade.r;        // Красный
+                data[pixelIndex + 1] = shade.g;    // Зеленый
+                data[pixelIndex + 2] = shade.b;    // Синий
+                data[pixelIndex + 3] = 255;        // Альфа
+            }
         }
     }
+    else
+    {   
+        for (let y = 0; y < height; y++) 
+        {
+            for (let x = 0; x < width; x++) 
+            {
+                const index = y * width + x;
+                const z = zBuffer[index];
 
+                let shade = { r: 128, g: 128, b: 128 }; // Цвет по умолчанию
+                if (z !== -Infinity) 
+                {
+                    if (colorBuffer[index] !== null)
+                    {
+                        shade = colorBuffer[index];
+                    }
+                } 
+
+                const pixelIndex = (y * width + x) * 4;
+                data[pixelIndex] = shade.r;        // Красный
+                data[pixelIndex + 1] = shade.g;    // Зеленый
+                data[pixelIndex + 2] = shade.b;    // Синий
+                data[pixelIndex + 3] = 255;        // Альфа
+            }
+        }
+    }
     ctx.putImageData(imageData, 0, 0);
     ctx.fillStyle = 'yellow';
     ctx.beginPath();
@@ -508,12 +618,6 @@ function saveFigureToFile() {
   
     return objData;
 }
-
-// Обработчик выбора фигуры из выпадающего списка
-figureSelect.addEventListener('change', (e) => {
-    curFigure = parseInt(e.target.value);
-    draw();
-});
 
 // координатная ось TEST
 const xyz = {
@@ -717,7 +821,8 @@ document.getElementById('load-obj').addEventListener('click', () => {
                 const contents = e.target.result;
                 parseOBJ(contents);
                 curFigure = 0;
-                draw(); 
+                shadingList.style.display = 'inline';
+                draw();
             };
             reader.readAsText(file);
         }
@@ -781,7 +886,7 @@ function parseOBJ(data) {
         vertices: vertices,
         normals: normals,
         textures: textures,
-        faces: faces,
+        faces: faces,//[[vind, nind, tind], ..., [vind, nind, tind]]
     };
 }
 
@@ -808,6 +913,18 @@ function drawLine(point1, point2, color){
 draw();
 
 //======================Обработчики=====================
+
+// Обработчик выбора фигуры из выпадающего списка
+figureSelect.addEventListener('change', (e) => {
+    curFigure = parseInt(e.target.value);
+    draw();
+});
+
+// Обработчик выбора шейдинга из выпадающего списка
+shadingSelect.addEventListener('change', (e) => {
+    curShading = parseInt(e.target.value);
+    draw();
+});
 
 document.getElementById('perspectiveButton').addEventListener('click', () => {
     currentProjection = 'perspective';

@@ -64,6 +64,11 @@
         #save-obj{
             margin-right: 8px;
         }
+
+        #shading-list{
+            display: none;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -71,7 +76,7 @@
         <canvas id="canvas" width="600" height="600"></canvas>
         <div style="display: flex;">
             <button id="load-obj">Загрузить из файла</button>
-            <button id="save-obj" onclick="saveFigureToFile()">Сохранить в файл</button>
+            <button id="save-obj" onclick="saveFigureToFile()" style="display: none;">Сохранить в файл</button>
 
             <div id="figure-list">
                 <select id="figure-select">
@@ -80,6 +85,13 @@
                 </select>
             </div>
         </div>
+        <div id="shading-list">
+            <select id="shading-select">
+                <option value="0" selected>Плоское закрашивание</option>
+                <option value="1">Шейдинг по Гуро</option>
+                <option value="2">Шейдинг по Фонгу</option>
+            </select>
+        </div>
     </div>
 
     <div class="controls">
@@ -87,7 +99,7 @@
             Поворот по X: <input type="range" id="rotateX" min="0" max="360" step="1" value="0">
         </label>
         <label>
-            Поворот по Y: <input type="range" id="rotateY" min="0" max="360" step="1" value="50">
+            Поворот по Y: <input type="range" id="rotateY" min="0" max="360" step="1" value="0">
         </label>
         <label>
             Поворот по Z: <input type="range" id="rotateZ" min="0" max="360" step="1" value="0">
@@ -99,7 +111,7 @@
             Положение света по X: <input type="range" id="lightPosX" min="-1000" max="1000" step="0.1" value="300">
         </label>
         <label>
-            Положение света по Y: <input type="range" id="lightPosY" min="-1000" max="1000" step="0.1" value="300">
+            Положение света по Y: <input type="range" id="lightPosY" min="-1000" max="1000" step="0.1" value="-300">
         </label>
         <label>
             Положение света по Z: <input type="range" id="lightPosZ" min="-1000" max="1000" step="0.1" value="0"> 
