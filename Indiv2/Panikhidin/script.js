@@ -1,6 +1,12 @@
 canvas = document.getElementById('canvas');
 ctx = canvas.getContext("2d");
 pixelsData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+let spheres; // сферы на сцене
+//чекбоксы для стен зеркал
+leftWallCheckbox = document.getElementById("leftWall");
+backwardWallCheckbox = document.getElementById('backwardWall')
+rightWallCheckbox = document.getElementById('rightWall')
+forwardWallCheckbox = document.getElementById('forwardWall')
 
 //Установка значенияя пикселя
 function setPixel(x, y, col){
@@ -82,8 +88,25 @@ function Ligthing(intensity, position){
         position : position
     }
 }
+//функция отрисовки сцены
+function draw(){
+    clearCanvas();
+    spheres = [
+        //<стены>
+        Sphere(Vector(-4001, 0, 0), 4000, Color(0, 255, 0), 1, leftWallCheckbox.checked),
+        Sphere(Vector(0, -4001, 0), 4000, Color(255, 255, 255), 1, 0),
+        Sphere(Vector(4001, 0, 0), 4000, Color(255, 255, 0), 1, rightWallCheckbox.checked),
+        Sphere(Vector(4001, 0, 0), 4000, Color(255, 0, 255), 1, 0),
+        Sphere(Vector(0, 0, -3995), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked),
+        Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked),
+        //</стены>
+
+        
+    ]
+}
 
 
+draw();
 // логи для тестрования функций: 
 
 /*

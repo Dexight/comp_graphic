@@ -54,14 +54,12 @@
     </div>
 
     <fieldset>
-        <legend>Выберите режим отображения стен</legend>
-        <div></div><input id="backwardWall" type="checkbox" ><label>Задняя стена
-            зеркальная</label></div>
-        <div></div><input id="leftWall" type="checkbox" ><label>Левая стена зеркальная</label>
+        <legend>Зеркальность стен</legend>
+        <div></div><input id="backwardWall" type="checkbox" onchange="draw()"><label>Зеркало сзади</label></div>
+        <div></div><input id="leftWall" type="checkbox" onchange="draw()"><label>Зеркало слева</label>
         </div>
-        <div></div><input id="forwardWall" type="checkbox" ><label>Передняя стена
-            зеркальная</label></div>
-        <div><input id="rightWall" type="checkbox" ><label>Правая стена зеркальная</label></div>
+        <div></div><input id="forwardWall" type="checkbox" onchange="draw()"><label>Зеркало спереди</label></div>
+        <div><input id="rightWall" type="checkbox" onchange="draw()"><label>Зеркало справа</label></div>
     </fieldset>
     <script src="script.js"></script>
 </body>
