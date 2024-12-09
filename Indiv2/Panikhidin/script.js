@@ -62,9 +62,27 @@ function Vector(x, y, z){
 }
 
 //Функция для создания сферы
-function Sphere(){
-    //TODO
+//spec - зеркальность
+//refl - отражение
+function Sphere(centerVec, radius, color, spec, refl){
+    return{
+        center: centerVec,
+        radius: radius,
+        color: color,
+        specularity: spec, 
+        reflective: refl
+    };
 }
+
+//Освещение
+// задается интенсивноостью и позицией светильника 
+function Ligthing(intensity, position){
+    return {
+        intensity: intensity,
+        position : position
+    }
+}
+
 
 // логи для тестрования функций: 
 
