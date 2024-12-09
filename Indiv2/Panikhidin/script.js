@@ -79,6 +79,15 @@ function Sphere(centerVec, radius, color, spec, refl){
         reflective: refl
     };
 }
+let viewPortSize = 1;
+function canvas2viewport(x, y){
+    return Vector(
+        x*viewPortSize / canvas.width,
+        y*viewPortSize / canvas.height,
+        1
+    );
+}
+
 
 //Освещение
 // задается интенсивноостью и позицией светильника 
@@ -88,6 +97,45 @@ function Ligthing(intensity, position){
         position : position
     }
 }
+
+//P(t)=origin+t⋅direction - уравнение луча, где P(t) - точка на луче, t - расстояние вдоль направления луча
+/* 
+|P - center|^2 = radius^2  - уравнение сферы
+|origin + t*direction - center|^2 = radius
+
+раскрывая, получаем:
+
+oc⋅oc+2t⋅(oc⋅direction)+t^2⋅(direction⋅direction)=radius^2
+~ 
+a*t^2 + b*t + c, 
+где a = direction^2,
+    b = 2*oc*direction,
+    c = oc^2 - radius^2
+*/
+
+//функция поиска пересечения луча и сферы 
+//origin - начальная точка луча
+//dir - направление луча
+//sphere - сфера с которой происходит пересечение
+
+function intersectOfRaySphere(origin, dir, sphere){
+    let center = sphere.center; // берем центр сферы
+    let rad = sphere.radius
+    let oc = origin.sub(center); // разность origin - center
+    let a = dir.dot(dir); // direction * direction
+    let b = 2*oc.dot(dir);
+    let c = oc.dot(oc) - rad*rad;
+
+    let D = b*b -4*a*c; // Дискриминант
+    if(D < 0){
+        return [Infinity, Infinity]; // пересечение неопределено
+    }
+    //корни
+    let t1 = (-b - Math.sqrt(D))/(2*a);
+    let t2 = (-b + Math.sqrt(D))/(2*a);
+    return [t1, t2];
+}
+
 //функция отрисовки сцены
 function draw(){
     clearCanvas();
@@ -101,7 +149,7 @@ function draw(){
         Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked),
         //</стены>
 
-        
+
     ]
 }
 
