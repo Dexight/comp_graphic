@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=yes" name="viewport">
+    <title>Корнуэльская комната</title>
+    <style>
+        .main {margin: auto}
+        body{
+            font: 1rem 'Montseratt'
+            sans-serif
+        }
+        fieldset{
+            width: 500px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <Label>Сцена:</Label>
+        <br>
+        <canvas height="600" id="canvas" style="border: 1px black solid" width="600"></canvas>
+        <br>
+        <Label>Настройки:</Label>
+        <br>
+        <div>
+            <input type="range" id="reflectionSphere1" value="1" min="0" max="1" step="0.1" >
+            <label id="labelRefl1" for="reflectionSphere1">отражаемость 1 сферы</label>
+        </div>
+        <div>
+            <input type="range" id="specularitySphere1" value="51" min="-1" max="999" step="2" >
+            <label id="labelSpec1" for="specularitySphere1">глянцевость 1 сферы</label>
+        </div>
+        <div>
+            <input type="range" id="reflectionSphere2" value="0" min="0" max="1" step="0.1" >
+            <label id="labelRefl2" for="reflectionSphere2">отражаемость 2 сферы</label>
+        </div>
+        <div>
+            <input type="range" id="specularitySphere2" value="1000" min="-1" max="999" step="2"
+                >
+            <label id="labelSpec2" for="specularitySphere2">глянцевость 2 сферы</label>
+        </div>
+        <div>
+
+
+        </div>
+
+
+
+    </div>
+
+    <fieldset>
+        <legend>Выберите режим отображения стен</legend>
+        <div></div><input id="backwardWall" type="checkbox" ><label>Задняя стена
+            зеркальная</label></div>
+        <div></div><input id="leftWall" type="checkbox" ><label>Левая стена зеркальная</label>
+        </div>
+        <div></div><input id="forwardWall" type="checkbox" ><label>Передняя стена
+            зеркальная</label></div>
+        <div><input id="rightWall" type="checkbox" ><label>Правая стена зеркальная</label></div>
+    </fieldset>
+</body>
+</html>
