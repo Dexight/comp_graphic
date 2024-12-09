@@ -88,7 +88,6 @@ function canvas2viewport(x, y){
     );
 }
 
-
 //Освещение
 // задается интенсивноостью и позицией светильника 
 function Ligthing(intensity, position){
@@ -97,6 +96,8 @@ function Ligthing(intensity, position){
         position : position
     }
 }
+
+let lightings = Ligthing(0.8, Vector(0, 0.5, 4));
 
 //P(t)=origin+t⋅direction - уравнение луча, где P(t) - точка на луче, t - расстояние вдоль направления луча
 /* 
@@ -134,6 +135,27 @@ function intersectOfRaySphere(origin, dir, sphere){
     let t1 = (-b - Math.sqrt(D))/(2*a);
     let t2 = (-b + Math.sqrt(D))/(2*a);
     return [t1, t2];
+}
+//Поиск ближайшего пересечения луча и сферы
+function FindClosestIntersection(origin, dir, mint, maxt){
+    let rest = Infinity;
+    let closestSphere = undefined;
+
+    for(let i = 0; i < spheres.length; ++i){
+        let t = intersectOfRaySphere(origin, dir, spheres[i]);
+        if (t[0] < closestSphere && mint<=t[0] && t[0] <= maxt){
+            rest = t[0];
+            closestSphere = spheres[i];
+        }
+        if (t[1] < closestSphere && mint<=t[1] && t[1] <= maxt){
+            rest = t[1];
+            closestSphere = spheres[i];
+        }
+    }
+    if (closestSphere!== undefined){
+        return [closestSphere, rest]
+    }
+    return undefined
 }
 
 //функция отрисовки сцены
