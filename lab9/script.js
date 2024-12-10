@@ -309,7 +309,7 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
     const yMax = Math.min(Math.floor(p2[1]), height - 1);
 
     //Вычисление цвета для Гуро
-    const [color0, color1, color2] = calculateColorGuro(n0, n1, n2);
+    const [color0, color1, color2] = calculateColorGuro(n0, n1, n2, p0, p1, p2);
 
     for (let y = yMin; y <= yMax; y++) 
     {
@@ -401,26 +401,26 @@ function color_lerp(c0, c1, t) {
     };
 }
 
-function calculateColorGuro(n0, n1, n2)
+function calculateColorGuro(n0, n1, n2, p0, p1, p2)
 {
     const lightPos = [lightPosX, lightPosY, lightPosZ];
     const baseColor = { r: 255, g: 255, b: 255 }; 
     const ambientIntensity = 0.3;
     
     const lightDir0 = [
-        lightPos[0] - n0[0],
-        lightPos[1] - n0[1],//(-n0[1]),
-        lightPos[2] - n0[2]
+        lightPos[0] - p0[0],
+        lightPos[1] - (-p0[1]),
+        lightPos[2] - p0[2]
     ];
     const lightDir1 = [
-        lightPos[0] - n1[0],
-        lightPos[1] - n1[1],//(-n1[1]),
-        lightPos[2] - n1[2]
+        lightPos[0] - p1[0],
+        lightPos[1] - (-p1[1]),
+        lightPos[2] - p1[2]
     ];
     const lightDir2 = [
-        lightPos[0] - n2[0],
-        lightPos[1] - n2[1],//(-n2[1]),
-        lightPos[2] - n2[2]
+        lightPos[0] - p2[0],
+        lightPos[1] - (-p2[1]),
+        lightPos[2] - p2[2]
     ];
     const intensity0 = calculateLambert(n0, lightDir0, ambientIntensity);
     const intensity1 = calculateLambert(n1, lightDir1, ambientIntensity);
