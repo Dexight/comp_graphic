@@ -97,7 +97,7 @@ function Ligthing(intensity, position){
     }
 }
 
-let lightings = Ligthing(0.8, Vector(0, 0.5, 4));
+let lightings = [Ligthing(0.8, Vector(0, 0.5, 4))];
 
 //P(t)=origin+t⋅direction - уравнение луча, где P(t) - точка на луче, t - расстояние вдоль направления луча
 /* 
@@ -158,6 +158,46 @@ function FindClosestIntersection(origin, dir, mint, maxt){
     return undefined
 }
 
+//Функция для расчета отраженного вектора
+//N - нормаль(единичный вектор)
+//R - падающий
+function ReflectionRay(N, R){
+    return N.mult(2*N.dot(R)).Sub(R);
+}
+
+// расчет света в точке
+//pointLighting - точка, где рассчитывается освещение
+//normalVector - вектор нормали для pointLighting
+//viewVector - вектор направления к наблюдателю
+//specularity - параметр отражаемости в точке 
+function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specularity){
+    let intensityOfLightAtPoint = 0; // интенсивность света в точке
+    for(let i = 0; i < lightings.length; ++i){
+        lightingVector = lightings[i].position.sub(pointLighting); // вектор освещения
+        let thingBetween = FindClosestIntersection(point, lightingVector, 0.0001, 1);
+        if(thingBetween !== undefined) continue; // игнорируем источник света, если найдено препятствие
+
+        cosPhi = (normalVector.dot(lightingVector)) / (normalVector.len()*lightingVector.len());
+        if (cosPhi > 0){
+            intensityOfLightAtPoint += light[i].intensity * cosPhi;
+        }
+
+        if(specularity != -1){
+            let reflectedVector = ReflectionRay(normalVector, lightingVector);
+            cosPsi = (reflectedVector.dot(viewVector))/(reflectedVector.len()*viewVector.len());
+            if(cosPsi > 0){
+                intensityOfLightAtPoint += light[i].intensity * Math.pow(cosPsi, specularity);
+            }
+        }
+    }
+    return intensityOfLightAtPoint;
+}
+
+// Рейтрейсинг
+function RayTracing(){
+
+}
+
 //функция отрисовки сцены
 function draw(){
     clearCanvas();
@@ -175,12 +215,7 @@ function draw(){
     ]
 }
 
-//Функция для расчета отраженного вектора
-//N - нормаль(единичный вектор)
-//R - падающий
-function ReflectionRay(N, R){
-    return N.mult(2*N.dot(R)).Sub(R);
-}
+
 
 draw();
 // логи для тестрования функций: 
