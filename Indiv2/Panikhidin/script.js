@@ -13,7 +13,7 @@ function setPixel(x, y, col){
     //нормируем координаты (чтоб начало координат в центре было)
     if(col == undefined)
         alert('setPixel: Ошибка: Цвет не определен');
-    console.log(col)    
+    // console.log(col)    
     x = canvas.width / 2 + x;
     y = canvas.height / 2 - y - 1;
 
@@ -210,10 +210,10 @@ function RayTracing(originVector, dir, mint, maxt, depth=5){
         return localColor;
     }
     let reflRay = ReflectionRay(viewVector, normalVector);
-    console.log(reflRay);
+    // console.log(reflRay);
     let reflectedColor = RayTracing(point, reflRay, 0.0001, Infinity, depth-1)
     let local = localColor.mult(1 - closestSphere.reflective);
-    let reflected = reflectedColor.mul(closestSphere.reflective);
+    let reflected = reflectedColor.mult(closestSphere.reflective);
     return local.add(reflected);
 
 }
