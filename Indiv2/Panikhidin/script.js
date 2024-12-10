@@ -143,11 +143,11 @@ function FindClosestIntersection(origin, dir, mint, maxt){
 
     for(let i = 0; i < spheres.length; ++i){
         let t = intersectOfRaySphere(origin, dir, spheres[i]);
-        if (t[0] < closestSphere && mint<=t[0] && t[0] <= maxt){
+        if (t[0] < rest && mint<=t[0] && t[0] <= maxt){
             rest = t[0];
             closestSphere = spheres[i];
         }
-        if (t[1] < closestSphere && mint<=t[1] && t[1] <= maxt){
+        if (t[1] < rest && mint<=t[1] && t[1] <= maxt){
             rest = t[1];
             closestSphere = spheres[i];
         }
@@ -161,9 +161,9 @@ function FindClosestIntersection(origin, dir, mint, maxt){
 //Функция для расчета отраженного вектора
 //N - нормаль(единичный вектор)
 //R - падающий
-function ReflectionRay(N, R){
-    return N.mult(2*N.dot(R)).Sub(R);
-}
+    function ReflectionRay(N, R){
+        return N.mult(2*N.dot(R)).sub(R);
+    }
 
 // расчет света в точке
 //pointLighting - точка, где рассчитывается освещение
@@ -174,19 +174,19 @@ function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specula
     let intensityOfLightAtPoint = 0; // интенсивность света в точке
     for(let i = 0; i < lightings.length; ++i){
         lightingVector = lightings[i].position.sub(pointLighting); // вектор освещения
-        let thingBetween = FindClosestIntersection(point, lightingVector, 0.0001, 1);
+        let thingBetween = FindClosestIntersection(pointLighting, lightingVector, 0.0001, 1);
         if(thingBetween !== undefined) continue; // игнорируем источник света, если найдено препятствие
 
-        cosPhi = (normalVector.dot(lightingVector)) / (normalVector.len()*lightingVector.len());
+        let cosPhi = (normalVector.dot(lightingVector)) / (normalVector.len()*lightingVector.len());
         if (cosPhi > 0){
-            intensityOfLightAtPoint += light[i].intensity * cosPhi;
+            intensityOfLightAtPoint += lightings[i].intensity * cosPhi;
         }
 
         if(specularity != -1){
             let reflectedVector = ReflectionRay(normalVector, lightingVector);
-            cosPsi = (reflectedVector.dot(viewVector))/(reflectedVector.len()*viewVector.len());
+            let cosPsi = (reflectedVector.dot(viewVector))/(reflectedVector.len()*viewVector.len());
             if(cosPsi > 0){
-                intensityOfLightAtPoint += light[i].intensity * Math.pow(cosPsi, specularity);
+                intensityOfLightAtPoint += lightings[i].intensity * Math.pow(cosPsi, specularity);
             }
         }
     }
@@ -194,7 +194,27 @@ function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specula
 }
 
 // Рейтрейсинг
-function RayTracing(){
+function RayTracing(originVector, dir, mint, maxt, depth=5){
+    let intersection = FindClosestIntersection(originVector, dir, mint, maxt);
+    if(intersection === undefined)
+        return Color(255,255,255);
+    closestSphere = intersection[0];
+    t = intersection[1];
+    let point = originVector.add(dir.mult(t));
+    let normalVector = point.sub(closestSphere.center);
+    normalVector = normalVector.mult(1.0/normalVector.len());
+    let viewVector = dir.mult(-1);
+    intensityOfLighting = computeLigthingAtPoint(point, normalVector, viewVector,closestSphere.specularity);
+    let localColor = closestSphere.color.mult(intensityOfLighting);
+    if(closestSphere.reflective <=0 || depth <= 0){
+        return localColor;
+    }
+    let reflRay = ReflectionRay(viewVector, normalVector);
+    console.log(reflRay);
+    let reflectedColor = RayTracing(point, reflRay, 0.0001, Infinity, depth-1)
+    let local = localColor.mult(1 - closestSphere.reflective);
+    let reflected = reflectedColor.mul(closestSphere.reflective);
+    return local.add(reflected);
 
 }
 
@@ -210,9 +230,16 @@ function draw(){
         Sphere(Vector(0, 0, -3995), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked),
         Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked),
         //</стены>
-
-
     ]
+    for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
+        for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
+            let direction = canvas2viewport(x, y);
+            let color = RayTracing(Vector(0,0,0), direction, 1, Infinity, 5);
+            setPixel(x, y, color);
+        }
+    }
+
+    UpdateCanvas();
 }
 
 
