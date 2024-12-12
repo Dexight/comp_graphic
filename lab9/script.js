@@ -177,6 +177,17 @@ function draw()
                 point = multiplyMatrixAndPoint(reflectionMatrix, point);  
                 return point;
             });
+        
+        const transformedNormals = figure.vertices.map(n=>{
+            let point = [...n, 1];  
+            if(Ax !== Bx || Ay !== By || Az !== Bz)
+                point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);// поворот вокруг прямой
+            point = multiplyMatrixAndPoint(rotationX, point);//повороты
+            point = multiplyMatrixAndPoint(rotationY, point);
+            point = multiplyMatrixAndPoint(rotationZ, point);
+            point = multiplyMatrixAndPoint(reflectionMatrix, point);//отражение
+            return point;
+        })
 
         const projectedVertices = transformedVertices.map(vertex => project([vertex[0], vertex[1], vertex[2]]));
         //console.log(projectedVertices);
@@ -206,7 +217,7 @@ function draw()
                     //ynorm = normal1v[1] + normal2v[1] + normal3v[1]
                     //znorm = normal1v[2] + normal2v[2] + normal3v[2]
                     //normal = [xnorm, ynorm, znorm]
-                    normal = figure.normals[t[1][0]]
+                    normal = transformedNormals[t[1][0]]
                 }
                 else 
                 {
@@ -223,7 +234,7 @@ function draw()
 
                 if (cosAngle < 0) { // Отсечение нелицевых граней
                     visibleTriangles.push(t);
-                    [minZ, maxZ] = rasterizeTriangle([[pv1, pv2, pv3], t[1].map(index => customFigure.normals[index])], zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal);
+                    [minZ, maxZ] = rasterizeTriangle([[pv1, pv2, pv3], t[1].map(index => transformedNormals[index])], zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal);
                 }
             })
         });
