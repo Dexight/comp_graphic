@@ -18,9 +18,13 @@ let lightPosZ = document.getElementById('lightPosZ').value;
 let showVertices = true;
 let showEdges = true;
 let showXYZ = true; //TEST
-let rotateX = 0, rotateY = 0, rotateZ = 0;
-let scale = 1;
-let translateX = 0, translateY = 0, translateZ = 0;
+let rotateX = parseFloat(document.getElementById('rotateX').value);
+let rotateY = parseFloat(document.getElementById('rotateY').value);
+let rotateZ = parseFloat(document.getElementById('rotateZ').value);
+let scale = parseFloat(document.getElementById('scale').value);
+let translateX = parseInt(document.getElementById('translateX').value);
+let translateY = parseInt(document.getElementById('translateY').value);
+let translateZ = parseInt(document.getElementById('translateZ').value);
 let Ax = 0, Ay = 0, Az = 0;
 let Bx = 0, By = 0, Bz = 0;
 let angle = 0;
@@ -351,10 +355,10 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             xEnd = lerp(p0[0], p2[0], t1);
             zEnd = lerp(p0[2], p2[2], t1);
         
-            normalStart = normal_lerp(n0, n1, t0);
+            normalStart = normal_lerp(n1, n2, t0);
             normalEnd = normal_lerp(n0, n2, t1);
         
-            cStart = color_lerp(color0, color1, t0);
+            cStart = color_lerp(color1, color2, t0);
             cEnd = color_lerp(color0, color2, t1);
         }
 
@@ -538,10 +542,10 @@ function renderDepthBufferSimple(zBuffer, normalBuffer, colorBuffer, minZ, maxZ)
         }
     }
     ctx.putImageData(imageData, 0, 0);
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
-    ctx.arc(lightPosX, -lightPosY, lightPosZ, 0, Math.PI * 2);
-    ctx.fill();
+    //ctx.fillStyle = 'yellow';//Источник света дебаг
+    //ctx.beginPath();
+    //ctx.arc(lightPosX, -lightPosY, lightPosZ, 0, Math.PI * 2);
+    //ctx.fill();
 }
 //======================
 
