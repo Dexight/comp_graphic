@@ -182,7 +182,7 @@ function draw()
                 return point;
             });
         
-        const transformedNormals = figure.vertices.map(n=>{
+        const transformedNormals = figure.normals.map(n=>{
             let point = [...n, 1];  
             if(Ax !== Bx || Ay !== By || Az !== Bz)
                 point = multiplyMatrixAndPoint(RotateAroundLineMatrix, point);// поворот вокруг прямой
@@ -231,6 +231,8 @@ function draw()
                 //нормализация
                 normalization_value = Math.sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2])
                 normal.forEach(coord => coord/normalization_value)
+                
+
 
                 const [pv1, pv2, pv3] = t[0].map(index => projectedVertices[index]);
                 const projectedNormal = calculateNormal(pv1, pv2, pv3);
