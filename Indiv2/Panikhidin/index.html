@@ -36,6 +36,30 @@
             <label id="labelSpec1" for="specularitySphere1">глянцевость 1 сферы</label>
         </div>
         <div>
+            <label>Позиция красной сферы:</label>
+            <br>
+            X:<input type="number" id="smallSpherePositionX" step="0.1" value="0.5">
+            <br>
+            Y:<input type="number" id="smallSpherePositionY" step="0.1" value="0">
+            <br>
+
+            Z:<input type="number" id="smallSpherePositionZ" step="0.1" value="1">
+            <br>
+            <button id="changeSmallSpherePosButton" onclick="changeSpherePos()">Сменить позицию</button>
+        </div>
+        <div>
+            <label>Позиция синей сферы:</label>
+            <br>
+            X:<input type="number" id="bigSpherePositionX" step="0.1" value="0.5">
+            <br>
+            Y:<input type="number" id="bigSpherePositionY" step="0.1" value="-0.5">
+            <br>
+
+            Z:<input type="number" id="bigSpherePositionZ" step="0.1" value="4">
+            <br>
+            <button id="changeSmallSpherePosButton" onclick="changeSpherePos()">Сменить позицию</button>
+        </div>
+        <div>
             <input type="range" id="reflectionSphere2" value="0" min="0" max="1" step="0.1" >
             <label id="labelRefl2" for="reflectionSphere2">отражаемость 2 сферы</label>
         </div>
@@ -43,6 +67,22 @@
             <input type="range" id="specularitySphere2" value="1000" min="-1" max="999" step="2"
                 >
             <label id="labelSpec2" for="specularitySphere2">глянцевость 2 сферы</label>
+        </div>
+        
+
+        <br>
+        <div>
+            <label>Позиция основного источника света:</label>
+            <br>
+            X:<input type="number" id="light1X" step="0.1" value="0">
+            <br>
+            Y:<input type="number" id="light1Y" step="0.1" value="1">
+            <br>
+            Z:<input type="number" id="light1Z" step="0.1" value="4">
+            <br>
+            Интенсивность:<input type="number" id="intensityLigth1" value="0.9" step="0.1" min="0" max="1">
+            <br>
+            <button id="light1Button" onclick="onchangeLight1()">Сменить позицию</button>
         </div>
         <div>
 

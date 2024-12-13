@@ -2,6 +2,7 @@ canvas = document.getElementById('canvas');
 ctx = canvas.getContext("2d");
 pixelsData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 let spheres; // сферы на сцене
+
 //чекбоксы для стен зеркал
 leftWallCheckbox = document.getElementById("leftWall");
 backwardWallCheckbox = document.getElementById('backwardWall')
@@ -88,7 +89,7 @@ function canvas2viewport(x, y){
     );
 }
 
-//Освещение
+// Функция конструктор-освещения
 // задается интенсивноостью и позицией светильника 
 function Ligthing(intensity, position){
     return {
@@ -97,7 +98,17 @@ function Ligthing(intensity, position){
     }
 }
 
-let lightings = [Ligthing(0.8, Vector(0, 0.5, 4))];
+light1 = Ligthing(0.9, Vector(0, 0.6, 4));
+
+function onchangeLight1(){
+    let X = document.getElementById('light1X').value;
+    let Y = document.getElementById('light1Y').value;
+    let Z = document.getElementById('light1Z').value;
+    let intens = document.getElementById('intensityLigth1').value;
+    light1 = Ligthing(intens, Vector(X,Y,Z));
+    draw();
+}
+let lightings;
 
 //P(t)=origin+t⋅direction - уравнение луча, где P(t) - точка на луче, t - расстояние вдоль направления луча
 /* 
@@ -193,48 +204,75 @@ function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specula
     return intensityOfLightAtPoint;
 }
 
-// Рейтрейсинг
-function RayTracing(originVector, dir, mint, maxt, depth=5){
+function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     let intersection = FindClosestIntersection(originVector, dir, mint, maxt);
-    if(intersection === undefined)
-        return Color(255,255,255);
-    closestSphere = intersection[0];
-    t = intersection[1];
+    if (intersection === undefined)
+        return Color(0, 0, 0); // Фон - черный
+
+    let closestSphere = intersection[0];
+    let t = intersection[1];
+
+    // Точка пересечения
     let point = originVector.add(dir.mult(t));
+    
+    // Нормаль в точке пересечения
     let normalVector = point.sub(closestSphere.center);
-    normalVector = normalVector.mult(1.0/normalVector.len());
+    normalVector = normalVector.mult(1.0 / normalVector.len()); // Нормализованная нормаль
+
+    // Вектор взгляда
     let viewVector = dir.mult(-1);
-    intensityOfLighting = computeLigthingAtPoint(point, normalVector, viewVector,closestSphere.specularity);
+
+    // Локальное освещение
+    let intensityOfLighting = computeLigthingAtPoint(point, normalVector, viewVector, closestSphere.specularity);
     let localColor = closestSphere.color.mult(intensityOfLighting);
-    if(closestSphere.reflective <=0 || depth <= 0){
+
+    // Проверка на отражающие свойства
+    if (closestSphere.reflective <= 0 || depth <= 0) {
         return localColor;
     }
-    let reflRay = ReflectionRay(viewVector, normalVector);
-    // console.log(reflRay);
-    let reflectedColor = RayTracing(point, reflRay, 0.0001, Infinity, depth-1)
-    let local = localColor.mult(1 - closestSphere.reflective);
-    let reflected = reflectedColor.mult(closestSphere.reflective);
-    return local.add(reflected);
 
+    // Отраженный луч
+    let reflRay = ReflectionRay(viewVector, normalVector);
+    let reflectedColor = RayTracing(point, reflRay, 0.0001, Infinity, depth - 1);
+
+    // Смешивание локального и отраженного цветов
+    let localContribution = localColor.mult(1 - closestSphere.reflective);
+    let reflectedContribution = reflectedColor.mult(closestSphere.reflective);
+    return localContribution.add(reflectedContribution);
 }
 
+function changeSpherePos(){
+    draw();
+}
 //функция отрисовки сцены
 function draw(){
     clearCanvas();
+    lightings = [light1];
+    sphere1X = document.getElementById("smallSpherePositionX").value; 
+    sphere1Y = document.getElementById("smallSpherePositionY").value;
+    sphere1Z = document.getElementById("smallSpherePositionZ").value;
+
+    sphere2X = document.getElementById("bigSpherePositionX").value; 
+    sphere2Y = document.getElementById("bigSpherePositionY").value;
+    sphere2Z = document.getElementById("bigSpherePositionZ").value;
+
     spheres = [
         //<стены>
-        Sphere(Vector(-4001, 0, 0), 4000, Color(0, 255, 0), 1, leftWallCheckbox.checked),
-        Sphere(Vector(0, -4001, 0), 4000, Color(255, 255, 255), 1, 0),
-        Sphere(Vector(4001, 0, 0), 4000, Color(255, 255, 0), 1, rightWallCheckbox.checked),
-        Sphere(Vector(4001, 0, 0), 4000, Color(255, 0, 255), 1, 0),
-        Sphere(Vector(0, 0, -3995), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked),
-        Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked),
+        Sphere(Vector(-4001, 0, 0), 4000, Color(255, 255, 255), 1, leftWallCheckbox.checked ? 1 : 0), // левая стена
+        Sphere(Vector(0, -4001, 0), 4000, Color(255, 255, 0), 1, 0), // пол
+        Sphere(Vector(4001, 0, 0), 4000, Color(128, 64, 0), 1, rightWallCheckbox.checked? 1 : 0), // правая стена
+        Sphere(Vector(0, 4001, 0), 4000, Color(255, 128, 255), 1, 0), //потолок
+        Sphere(Vector(0, 0, -3995), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
+        Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
         //</стены>
+        Sphere(Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), 1000, 0), // красная сфера с радиусом 1
+        Sphere(Vector(sphere2X, sphere2Y, sphere2Z), 0.7, Color(0, 0, 255), 1000, 0), // синяя сфера с радиусом 1.5
+      
     ]
     for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
         for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
             let direction = canvas2viewport(x, y);
-            let color = RayTracing(Vector(0,0,0), direction, 1, Infinity, 5);
+            let color = RayTracing(Vector(0,0,0), direction, 1, Infinity, 10);
             setPixel(x, y, color);
         }
     }
