@@ -9,6 +9,14 @@ backwardWallCheckbox = document.getElementById('backwardWall')
 rightWallCheckbox = document.getElementById('rightWall')
 forwardWallCheckbox = document.getElementById('forwardWall')
 
+reflSphere1 = document.getElementById("reflectionSphere1");
+specSphere1 = document.getElementById("specularitySphere1");
+
+reflSphere2 = document.getElementById("reflectionSphere2");
+specSphere2 = document.getElementById("specularitySphere2");
+
+
+//
 //Установка значенияя пикселя
 function setPixel(x, y, col){
     //нормируем координаты (чтоб начало координат в центре было)
@@ -98,7 +106,7 @@ function Ligthing(intensity, position){
     }
 }
 
-light1 = Ligthing(0.9, Vector(0, 0.6, 4));
+light1 = Ligthing(0.9, Vector(0, 0.6, 3));
 
 function onchangeLight1(){
     let X = document.getElementById('light1X').value;
@@ -218,7 +226,7 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     // Нормаль в точке пересечения
     let normalVector = point.sub(closestSphere.center);
     normalVector = normalVector.mult(1.0 / normalVector.len()); // Нормализованная нормаль
-
+    // console.log('Вектор нормали: ', normalVector);
     // Вектор взгляда
     let viewVector = dir.mult(-1);
 
@@ -262,11 +270,11 @@ function draw(){
         Sphere(Vector(0, -4001, 0), 4000, Color(255, 255, 0), 1, 0), // пол
         Sphere(Vector(4001, 0, 0), 4000, Color(128, 64, 0), 1, rightWallCheckbox.checked? 1 : 0), // правая стена
         Sphere(Vector(0, 4001, 0), 4000, Color(255, 128, 255), 1, 0), //потолок
-        Sphere(Vector(0, 0, -3995), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
-        Sphere(Vector(0, 0, 3995), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
+        Sphere(Vector(0, 0, -3996), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
+        Sphere(Vector(0, 0, 3996), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
         //</стены>
-        Sphere(Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), 1000, 0), // красная сфера с радиусом 1
-        Sphere(Vector(sphere2X, sphere2Y, sphere2Z), 0.7, Color(0, 0, 255), 1000, 0), // синяя сфера с радиусом 1.5
+        Sphere(Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), parseInt(specSphere1.value), parseInt(reflSphere1.value)), // красная сфера с радиусом 1
+        Sphere(Vector(sphere2X, sphere2Y, sphere2Z), 0.4, Color(0, 0, 255), parseInt(specSphere2.value), parseInt(reflSphere2.value)), // синяя сфера с радиусом 1.5
       
     ]
     for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
