@@ -94,7 +94,7 @@ class Sphere
         
         const c = dot(oc, oc) - this.radius ** 2;
         
-        const h = b * b - c;
+        let h = b * b - c;
 
         if (h < 0) return [-1, -1];//нет пересечений
 
@@ -106,7 +106,8 @@ class Sphere
 // Куб
 class Box 
 {
-    constructor(center, size, color) {
+    constructor(center, size, color) 
+    {
         this.color = color;
         this.center = center;
         this.size = size;
@@ -179,12 +180,16 @@ class Box
         }
     
         // Adjust normal direction based on ray direction
-        outNormal.x *= -Math.sign(rd.x);
-        outNormal.y *= -Math.sign(rd.y);
-        outNormal.z *= -Math.sign(rd.z);
+        outNormal.x *= -Math.sign(rayDir.x);
+        outNormal.y *= -Math.sign(rayDir.y);
+        outNormal.z *= -Math.sign(rayDir.z);
     
         return [tN, tF, outNormal];
     }
 }
 
 //--------------------------------------------------------- Основной функционал
+const objects = [
+    new Sphere({ x: 0, y: 0, z: 4 }, 1, { r: 255, g: 0, b: 0 }),
+    new Box({ x: 2, y: 0, z: 6 }, { x: 1, y: 1, z: 1 }, { r: 0, g: 0, b: 255 })
+];
