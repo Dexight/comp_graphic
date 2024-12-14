@@ -79,8 +79,9 @@ function Vector(x, y, z){
 //Функция для создания сферы
 //spec - зеркальность
 //refl - отражение
-function Sphere(centerVec, radius, color, spec, refl){
+function Sphere(name='obj',centerVec, radius, color, spec, refl){
     return{
+        name: name,
         center: centerVec,
         radius: radius,
         color: color,
@@ -180,9 +181,14 @@ function FindClosestIntersection(origin, dir, mint, maxt){
 //Функция для расчета отраженного вектора
 //N - нормаль(единичный вектор)
 //R - падающий
-    function ReflectionRay(N, R){
-        return N.mult(2*N.dot(R)).sub(R);
-    }
+   // Функция расчета отраженного вектора
+function ReflectionRay(N, R) {
+    N = N.mult(1.0 / N.len());  
+    refl = R.sub(N.mult(2 * R.dot(N)));
+    // reflLen = refl.len();
+
+    return refl;
+}
 
 // расчет света в точке
 //pointLighting - точка, где рассчитывается освещение
@@ -193,7 +199,7 @@ function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specula
     let intensityOfLightAtPoint = 0; // интенсивность света в точке
     for(let i = 0; i < lightings.length; ++i){
         lightingVector = lightings[i].position.sub(pointLighting); // вектор освещения
-        let thingBetween = FindClosestIntersection(pointLighting, lightingVector, 0.0001, 1);
+        let thingBetween = FindClosestIntersection(pointLighting, lightingVector, 0.001, 1);
         if(thingBetween !== undefined) continue; // игнорируем источник света, если найдено препятствие
 
         let cosPhi = (normalVector.dot(lightingVector)) / (normalVector.len()*lightingVector.len());
@@ -226,7 +232,12 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     // Нормаль в точке пересечения
     let normalVector = point.sub(closestSphere.center);
     normalVector = normalVector.mult(1.0 / normalVector.len()); // Нормализованная нормаль
-    // console.log('Вектор нормали: ', normalVector);
+    
+    // Для передней стены инвертируем нормаль
+    if (closestSphere.name === 'forward') {
+        normalVector = normalVector.mult(-1);
+    }
+
     // Вектор взгляда
     let viewVector = dir.mult(-1);
 
@@ -241,7 +252,9 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
 
     // Отраженный луч
     let reflRay = ReflectionRay(viewVector, normalVector);
-    let reflectedColor = RayTracing(point, reflRay, 0.0001, Infinity, depth - 1);
+
+    // Смещение точки для предотвращения самопересечения
+    let reflectedColor = RayTracing(point, reflRay, 0.001, Infinity, depth - 1);
 
     // Смешивание локального и отраженного цветов
     let localContribution = localColor.mult(1 - closestSphere.reflective);
@@ -266,15 +279,15 @@ function draw(){
 
     spheres = [
         //<стены>
-        Sphere(Vector(-4001, 0, 0), 4000, Color(255, 255, 255), 1, leftWallCheckbox.checked ? 1 : 0), // левая стена
-        Sphere(Vector(0, -4001, 0), 4000, Color(255, 255, 0), 1, 0), // пол
-        Sphere(Vector(4001, 0, 0), 4000, Color(128, 64, 0), 1, rightWallCheckbox.checked? 1 : 0), // правая стена
-        Sphere(Vector(0, 4001, 0), 4000, Color(255, 128, 255), 1, 0), //потолок
-        Sphere(Vector(0, 0, -3996), 4000, Color(128, 255, 255), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
-        Sphere(Vector(0, 0, 3996), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
+        Sphere('left',Vector(-4001, 0, 0), 4000, Color(255, 255, 255), 1, leftWallCheckbox.checked ? 1 : 0), // левая стена
+        Sphere('floor',Vector(0, -4001, 0), 4000, Color(255, 255, 0), 1, 0), // пол
+        Sphere('right',Vector(4001, 0, 0), 4000, Color(128, 64, 0), 1, rightWallCheckbox.checked? 1 : 0), // правая стена
+        Sphere('ceil',Vector(0, 4001, 0), 4000, Color(255, 128, 255), 1, 0), //потолок
+        Sphere('forward',Vector(0, 0, -3996), 4000, Color(128, 255, 28), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
+        Sphere('backward',Vector(0, 0, 3996), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
         //</стены>
-        Sphere(Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), parseInt(specSphere1.value), parseInt(reflSphere1.value)), // красная сфера с радиусом 1
-        Sphere(Vector(sphere2X, sphere2Y, sphere2Z), 0.4, Color(0, 0, 255), parseInt(specSphere2.value), parseInt(reflSphere2.value)), // синяя сфера с радиусом 1.5
+        Sphere('sphere1',Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), parseInt(specSphere1.value), parseInt(reflSphere1.value)), // красная сфера с радиусом 1
+        Sphere('sphere2',Vector(sphere2X, sphere2Y, sphere2Z), 0.4, Color(0, 0, 255), parseInt(specSphere2.value), parseInt(reflSphere2.value)), // синяя сфера с радиусом 1.5
       
     ]
     for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
