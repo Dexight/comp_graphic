@@ -107,7 +107,8 @@ function Ligthing(intensity, position){
     }
 }
 
-light1 = Ligthing(0.9, Vector(0, 0.6, 3));
+light1 = Ligthing(0.5, Vector(0, 0.6, 3));
+light2 = Ligthing(0.5, Vector(0.7, 0.3, 1));
 
 function onchangeLight1(){
     let X = document.getElementById('light1X').value;
@@ -115,6 +116,15 @@ function onchangeLight1(){
     let Z = document.getElementById('light1Z').value;
     let intens = document.getElementById('intensityLigth1').value;
     light1 = Ligthing(intens, Vector(X,Y,Z));
+    draw();
+}
+
+function onchangeLight2(){
+    let X = document.getElementById('light2X').value;
+    let Y = document.getElementById('light2Y').value;
+    let Z = document.getElementById('light2Z').value;
+    let intens = document.getElementById('intensityLigth2').value;
+    light2 = Ligthing(intens, Vector(X,Y,Z));
     draw();
 }
 let lightings;
@@ -163,11 +173,11 @@ function FindClosestIntersection(origin, dir, mint, maxt){
 
     for(let i = 0; i < spheres.length; ++i){
         let t = intersectOfRaySphere(origin, dir, spheres[i]);
-        if (t[0] < rest && mint<=t[0] && t[0] <= maxt){
+        if (t[0] < rest && mint<=t[0] && t[0] < maxt){
             rest = t[0];
             closestSphere = spheres[i];
         }
-        if (t[1] < rest && mint<=t[1] && t[1] <= maxt){
+        if (t[1] < rest && mint<=t[1] && t[1] < maxt){
             rest = t[1];
             closestSphere = spheres[i];
         }
@@ -182,14 +192,23 @@ function FindClosestIntersection(origin, dir, mint, maxt){
 //N - нормаль(единичный вектор)
 //R - падающий
    // Функция расчета отраженного вектора
-function ReflectionRay(N, R) {
-    N = N.mult(1.0 / N.len());  
+/*
+   function ReflectionRay(N, R) {
+    N = N.mult(1.0 / N.len());
+    R = R.mult(1.0/R.len());  
+    if (N.dot(R) > 0) {
+        N = N.mult(-1);
+    }
     refl = R.sub(N.mult(2 * R.dot(N)));
-    // reflLen = refl.len();
-
     return refl;
 }
+*/
 
+// отраженный луч 2*N*<N,R> - Rs
+
+function ReflectionRay(v1, v2) {
+    return v2.mult(2 * v1.dot(v2)).sub(v1);
+}
 // расчет света в точке
 //pointLighting - точка, где рассчитывается освещение
 //normalVector - вектор нормали для pointLighting
@@ -197,21 +216,27 @@ function ReflectionRay(N, R) {
 //specularity - параметр отражаемости в точке 
 function computeLigthingAtPoint(pointLighting, normalVector, viewVector, specularity){
     let intensityOfLightAtPoint = 0; // интенсивность света в точке
+    if (normalVector.dot(viewVector) < 0) {
+        normalVector = normalVector.mult(-1);
+    }
     for(let i = 0; i < lightings.length; ++i){
         lightingVector = lightings[i].position.sub(pointLighting); // вектор освещения
         let thingBetween = FindClosestIntersection(pointLighting, lightingVector, 0.001, 1);
         if(thingBetween !== undefined) continue; // игнорируем источник света, если найдено препятствие
-
-        let cosPhi = (normalVector.dot(lightingVector)) / (normalVector.len()*lightingVector.len());
+        nDotL = normalVector.dot(lightingVector)
+        let cosPhi = (nDotL) / (normalVector.len()*lightingVector.len());
         if (cosPhi > 0){
             intensityOfLightAtPoint += lightings[i].intensity * cosPhi;
         }
 
         if(specularity != -1){
-            let reflectedVector = ReflectionRay(normalVector, lightingVector);
-            let cosPsi = (reflectedVector.dot(viewVector))/(reflectedVector.len()*viewVector.len());
-            if(cosPsi > 0){
-                intensityOfLightAtPoint += lightings[i].intensity * Math.pow(cosPsi, specularity);
+            // let reflectedVector = ReflectionRay(normalVector, lightingVector);
+            let reflVec = normalVector.mult(2.0*nDotL).sub(lightingVector);
+            rdotv = reflVec.dot(viewVector); 
+            // let cosPsi = (reflectedVector.dot(viewVector))/(reflectedVector.len()*viewVector.len());
+            if(rdotv > 0){
+                // intensityOfLightAtPoint += lightings[i].intensity * Math.pow(cosPsi, specularity);
+                intensityOfLightAtPoint += lightings[i].intensity * Math.pow(rdotv / (reflVec.len() * viewVector.len()), specularity);
             }
         }
     }
@@ -235,7 +260,11 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     
     // Для передней стены инвертируем нормаль
     if (closestSphere.name === 'forward') {
-        normalVector = normalVector.mult(-1);
+        // console.log(normalVector);
+        // console.log('forward');
+        // console.log('normal vector for forward: ', normalVector);
+        // normalVector = normalVector.mult(-1);
+
     }
 
     // Вектор взгляда
@@ -249,10 +278,10 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     if (closestSphere.reflective <= 0 || depth <= 0) {
         return localColor;
     }
-
+    
     // Отраженный луч
     let reflRay = ReflectionRay(viewVector, normalVector);
-
+    
     // Смещение точки для предотвращения самопересечения
     let reflectedColor = RayTracing(point, reflRay, 0.001, Infinity, depth - 1);
 
@@ -268,7 +297,7 @@ function changeSpherePos(){
 //функция отрисовки сцены
 function draw(){
     clearCanvas();
-    lightings = [light1];
+    lightings = [light1, light2];
     sphere1X = document.getElementById("smallSpherePositionX").value; 
     sphere1Y = document.getElementById("smallSpherePositionY").value;
     sphere1Z = document.getElementById("smallSpherePositionZ").value;
@@ -280,9 +309,9 @@ function draw(){
     spheres = [
         //<стены>
         Sphere('left',Vector(-4001, 0, 0), 4000, Color(255, 255, 255), 1, leftWallCheckbox.checked ? 1 : 0), // левая стена
-        Sphere('floor',Vector(0, -4001, 0), 4000, Color(255, 255, 0), 1, 0), // пол
+        Sphere('floor',Vector(0, -4001, 0), 4000, Color(255, 255, 0), -1, 0), // пол
         Sphere('right',Vector(4001, 0, 0), 4000, Color(128, 64, 0), 1, rightWallCheckbox.checked? 1 : 0), // правая стена
-        Sphere('ceil',Vector(0, 4001, 0), 4000, Color(255, 128, 255), 1, 0), //потолок
+        Sphere('ceil',Vector(0, 4001, 0), 4000, Color(255, 128, 255), -1, 0), //потолок
         Sphere('forward',Vector(0, 0, -3996), 4000, Color(128, 255, 28), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
         Sphere('backward',Vector(0, 0, 3996), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
         //</стены>
@@ -293,7 +322,7 @@ function draw(){
     for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
         for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
             let direction = canvas2viewport(x, y);
-            let color = RayTracing(Vector(0,0,0), direction, 1, Infinity, 10);
+            let color = RayTracing(Vector(0,0,0), direction, 1, Infinity, 15);
             setPixel(x, y, color);
         }
     }
