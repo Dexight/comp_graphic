@@ -315,8 +315,8 @@ function draw(){
         Sphere('forward',Vector(0, 0, -3996), 4000, Color(128, 255, 28), 1, forwardWallCheckbox.checked ? 1 : 0), // передняя от камеры стена
         Sphere('backward',Vector(0, 0, 3996), 4000, Color(255, 255, 255), 1, backwardWallCheckbox.checked ? 1 : 0), // задняя от камеры стена
         //</стены>
-        Sphere('sphere1',Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), parseInt(specSphere1.value), parseInt(reflSphere1.value)), // красная сфера с радиусом 1
-        Sphere('sphere2',Vector(sphere2X, sphere2Y, sphere2Z), 0.4, Color(0, 0, 255), parseInt(specSphere2.value), parseInt(reflSphere2.value)), // синяя сфера с радиусом 1.5
+        Sphere('sphere1',Vector(sphere1X, sphere1Y, sphere1Z), 0.1, Color(255, 0, 0), 1000, parseInt(reflSphere1.value)), // красная сфера с радиусом 1
+        Sphere('sphere2',Vector(sphere2X, sphere2Y, sphere2Z), 0.4, Color(0, 0, 255), 500, parseInt(reflSphere2.value)), // синяя сфера с радиусом 1.5
       
     ]
     for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
