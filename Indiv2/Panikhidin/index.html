@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=yes" name="viewport">
+    <title>Корнуэльская комната</title>
+    <style>
+        .main {margin: auto}
+        body{
+            font: 1rem 'Montseratt'
+            sans-serif
+        }
+        fieldset{
+            width: 500px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <Label>Сцена:</Label>
+        <br>
+        <canvas height="600" id="canvas" style="border: 1px black solid" width="600"></canvas>
+        <br>
+        <Label>Настройки:</Label>
+        <br>
+        <div>
+            <input type="range" id="reflectionSphere1" onchange="draw()" value="1" min="0" max="1" step="0.1" >
+            <label id="labelRefl1" for="reflectionSphere1">отражаемость 1 сферы</label>
+        </div>
+        <!-- <div>
+            <input type="range" id="specularitySphere1" onchange="draw()" value="51" min="-1" max="999" step="2" >
+            <label id="labelSpec1" for="specularitySphere1" onchange="draw()" >глянцевость 1 сферы</label>
+        </div> -->
+        <div>
+            <label>Позиция красной сферы:</label>
+            <br>
+            X:<input type="number" id="smallSpherePositionX" step="0.1" value="-0.6">
+            <br>
+            Y:<input type="number" id="smallSpherePositionY" step="0.1" value="-0.9">
+            <br>
+
+            Z:<input type="number" id="smallSpherePositionZ" step="0.1" value="2.3">
+            <br>
+            <button id="changeSmallSpherePosButton" onclick="changeSpherePos()">Сменить позицию</button>
+        </div>
+        <div>
+            <label>Позиция синей сферы:</label>
+            <br>
+            X:<input type="number" id="bigSpherePositionX" step="0.1" value="0.5">
+            <br>
+            Y:<input type="number" id="bigSpherePositionY" step="0.1" value="-0.5">
+            <br>
+
+            Z:<input type="number" id="bigSpherePositionZ" step="0.1" value="4">
+            <br>
+            <button id="changeSmallSpherePosButton" onclick="changeSpherePos()">Сменить позицию</button>
+        </div>
+        <div>
+            <input type="range" id="reflectionSphere2" value="0" min="0" max="1" onchange="draw()" step="0.1" >
+            <label id="labelRefl2" for="reflectionSphere2">отражаемость 2 сферы</label>
+        </div>
+        <!-- <div>
+            <input type="range" id="specularitySphere2" value="1000" min="-1" max="999" step="2" onchange="draw()"
+                >
+            <label id="labelSpec2" for="specularitySphere2">глянцевость 2 сферы</label>
+        </div> -->
+        
+
+        <br>
+        <div>
+            <label>Позиция основного источника света:</label>
+            <br>
+            X:<input type="number" id="light1X" step="0.1" value="0">
+            <br>
+            Y:<input type="number" id="light1Y" step="0.1" value="0.6">
+            <br>
+            Z:<input type="number" id="light1Z" step="0.1" value="2.3">
+            <br>
+            Интенсивность:<input type="number" id="intensityLigth1" value="0.5" step="0.1" min="0" max="1">
+            <br>
+            <button id="light1Button" onclick="onchangeLight1()">Сменить позицию</button>
+        </div>
+        <br>
+        <div>
+            <label>Позиция дополнительного источника света:</label>
+            <br>
+            X:<input type="number" id="light2X" step="0.1" value="0.7">
+            <br>
+            Y:<input type="number" id="light2Y" step="0.1" value="0.3">
+            <br>
+            Z:<input type="number" id="light2Z" step="0.1" value="1">
+            <br>
+            Интенсивность:<input type="number" id="intensityLigth2" value="0.5" step="0.1" min="0" max="1">
+            <br>
+            <button id="light1Button" onclick="onchangeLight2()">Сменить позицию</button>
+        </div>
+
+
+
+    </div>
+
+    <fieldset>
+        <legend>Зеркальность стен</legend>
+        <div></div><input id="backwardWall" type="checkbox" onchange="draw()"><label>Зеркало сзади</label></div>
+        <div></div><input id="leftWall" type="checkbox" onchange="draw()"><label>Зеркало слева</label>
+        </div>
+        <div></div><input id="forwardWall" type="checkbox" onchange="draw()"><label>Зеркало спереди</label></div>
+        <div><input id="rightWall" type="checkbox" onchange="draw()"><label>Зеркало справа</label></div>
+    </fieldset>
+    <script src="script.js"></script>
+</body>
+</html>
