@@ -282,7 +282,6 @@ function RayTracing(originVector, dir, mint, maxt, depth = 5) {
     // Отраженный луч
     let reflRay = ReflectionRay(viewVector, normalVector);
     
-    // Смещение точки для предотвращения самопересечения
     let reflectedColor = RayTracing(point, reflRay, 0.001, Infinity, depth - 1);
 
     // Смешивание локального и отраженного цветов
@@ -333,6 +332,8 @@ function draw(){
 
 
 draw();
+
+
 // логи для тестрования функций: 
 
 /*
