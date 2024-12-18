@@ -52,6 +52,39 @@ document.getElementById('useFileNormalsCheckbox').addEventListener('change', (e)
     draw();
 });
 
+//==============Textures===========
+let textureImage = null;  // Глобальное изображение
+let textureCanvas = document.createElement('canvas');
+let textureCtx = textureCanvas.getContext('2d');
+
+function loadTexture() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.png, .jpg';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            const img = new Image();
+            reader.onload = (e) => {
+                img.onload = () => {
+                    textureCanvas.width = img.width;
+                    textureCanvas.height = img.height;
+                    textureCtx.drawImage(img, 0, 0);
+                    textureImage = textureCtx.getImageData(0, 0, img.width, img.height);
+                    console.log('Текстура загружена');
+                    draw();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+}
+
+//==============Textures===========
+
 //=======Z-buffer=======
 
 function Triangulation(triangles, face)
