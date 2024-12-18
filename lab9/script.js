@@ -57,6 +57,7 @@ let textureImage = null;  // Глобальное изображение
 let textureCanvas = document.createElement('canvas');
 let textureCtx = textureCanvas.getContext('2d');
 
+//загрузка текстуры из файла
 function loadTexture() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -81,6 +82,14 @@ function loadTexture() {
         }
     };
     input.click();
+}
+
+//интерполяция
+function lerpUV(uv1, uv2, t) {
+    return [
+        uv1[0] + (uv2[0] - uv1[0]) * t,
+        uv1[1] + (uv2[1] - uv1[1]) * t
+    ];
 }
 
 //==============Textures===========
