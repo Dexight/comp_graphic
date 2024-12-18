@@ -277,12 +277,14 @@ function draw()
 
 
                 const [pv1, pv2, pv3] = t[0].map(index => projectedVertices[index]);
+                const textureCoords = t[2].map(index => figure.textures[index]); // Текстурные координаты
+                // console.log(textureCoords);
                 const projectedNormal = calculateNormal(pv1, pv2, pv3);
                 const cosAngle = cosAngleBetween(projectedNormal, viewVector);
 
                 if (cosAngle < 0) { // Отсечение нелицевых граней
                     visibleTriangles.push(t);
-                    [minZ, maxZ] = rasterizeTriangle([[pv1, pv2, pv3], t[1].map(index => transformedNormals[index])], zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal);
+                    [minZ, maxZ] = rasterizeTriangle([[pv1, pv2, pv3], t[1].map(index => transformedNormals[index])], zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal, textureCoords);
                 }
             })
         });
@@ -355,14 +357,25 @@ function draw()
     load_obj.style.display = 'inline'
 }
 
-function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal) 
+function lerpUVWithZ(uv1, z1, uv2, z2, t) {
+    // Интерполяция UV с учетом перспективы
+    const invZ = 1 / (z1 + t * (z2 - z1));
+    const u = (uv1[0] / z1) + t * ((uv2[0] / z2) - (uv1[0] / z1));
+    const v = (uv1[1] / z1) + t * ((uv2[1] / z2) - (uv1[1] / z1));
+
+    return [u * invZ, v * invZ];
+}
+
+function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal, textureCoords) 
 {
     const [vn0, vn1, vn2] = [[triangle[0][0], triangle[1][0]], [triangle[0][1], triangle[1][1]], [triangle[0][2], triangle[1][2]]]; // [[Три вершины треугольника (x, y, z)], [Их нормали]]
 
     // Сортировка по Y-координате для упрощения
     const [pn0, pn1, pn2] = [vn0, vn1, vn2].sort((a, b) => a[0][1] - b[0][1]);
     const [p0, p1, p2, n0, n1, n2] = [pn0[0], pn1[0], pn2[0], pn0[1], pn1[1], pn2[1]]//pN - это точки, nN - их нормали
-    
+    const [vt0, vt1, vt2] = [textureCoords[0], textureCoords[1], textureCoords[2]]; // извлекаем в переменные текстурные координаты
+
+    // console.log(vt0, vt1, vt2);
     // Вычисление границ по Y
     const yMin = Math.max(Math.ceil(p0[1]), 0);
     const yMax = Math.min(Math.floor(p2[1]), height - 1);
@@ -373,7 +386,7 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
     for (let y = yMin; y <= yMax; y++) 
     {
         // Интерполяция X-координат и Z для текущей строки
-        let xStart, xEnd, zStart, zEnd, normalStart, normalEnd, cStart, cEnd;
+        let xStart, xEnd, zStart, zEnd, normalStart, normalEnd, cStart, cEnd, uvStart, uvEnd;
 
         if (y < p1[1]) // Верхняя половина треугольника 
         { 
@@ -386,6 +399,9 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
 
             normalStart = normal_lerp(n0, n1, t0);
             normalEnd = normal_lerp(n0, n2, t1);
+
+            uvStart = lerpUV(vt0, vt1, t0);
+            uvEnd = lerpUV(vt0, vt2, t1);
 
             cStart = color_lerp(color0, color1, t0);
             cEnd = color_lerp(color0, color2, t1);
@@ -402,6 +418,9 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             normalStart = normal_lerp(n1, n2, t0);
             normalEnd = normal_lerp(n0, n2, t1);
         
+            uvStart = lerpUV(vt1, vt2, t0); // Интерполяция текстурных координат
+            uvEnd = lerpUV(vt0, vt2, t1);  // Интерполяция текстурных координат
+
             cStart = color_lerp(color1, color2, t0);
             cEnd = color_lerp(color0, color2, t1);
         }
@@ -412,7 +431,9 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             [xStart, xEnd] = [xEnd, xStart];
             [zStart, zEnd] = [zEnd, zStart];
             [normalStart, normalEnd] = [normalEnd, normalStart];
-            [cStart, cEnd] = [cEnd, cStart]
+            [cStart, cEnd] = [cEnd, cStart];
+            [uvStart, uvEnd] = [uvEnd, uvStart];
+
         }
 
         // Округление X для пиксельных границ
@@ -427,17 +448,20 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
 
             // Интерполяция нормали
             calculated_normal = normal_lerp(normalStart, normalEnd, t);
-
             // Индекс в Z-буфере
             const index = Math.floor(y) * width + Math.floor(x);
 
+            // Индекс в Z-буфере
+            const uv = lerpUV(uvStart, uvEnd, t);
             // Обновление Z-буфера, если пиксель ближе
             if (z > zBuffer[index]) 
             {
                 zBuffer[index] = z;
+                const color = getTextureColor(uv[0], uv[1]);
                 if (curShading === 0)          normalBuffer[index] = [...normal]
                 else if (curShading === 2)     normalBuffer[index] = calculated_normal;//Phong
-                else                          colorBuffer[index] = color_lerp(cStart, cEnd, t);//Guro
+                else if(curShading === 1)      colorBuffer[index] = color_lerp(cStart, cEnd, t);//Guro
+                colorBuffer[index] = color;
             }
 
             // Обновление z границ;
@@ -449,6 +473,22 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
     return [minZ, maxZ];
 }
 
+// Получение цвета пикселя из текстуры
+function getTextureColor(u, v) {
+    if (!textureImage) return { r: 255, g: 255, b: 255 }; // Белый цвет по умолчанию
+
+    const x = Math.floor(u * (textureImage.width - 1));
+    const y = Math.floor(v * (textureImage.height - 1));
+
+    const index = (y * textureImage.width + x) * 4;
+    const data = textureImage.data;
+
+    return {
+        r: data[index],
+        g: data[index + 1],
+        b: data[index + 2]
+    };
+}
 // Линейная интерполяция
 function lerp(a, b, t) { return a + t * (b - a); }
 function normal_lerp(v1, v2, t) { return v1.map((val, i) => val + t * (v2[i] - val)); }
