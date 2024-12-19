@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Градиентный круг с масштабированием</title>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="600" height="600"></canvas>
+    <div class="controls">
+        <label> X: <input type="range" id="scaleX" min="0" max="5" step="0.01" value="1"> </label>
+        <label> Y: <input type="range" id="scaleY" min="0" max="5" step="0.01" value="1"> </label>
+        <button id="reset">Reset</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            alert('WebGL не поддерживается');
+            throw new Error('WebGL не поддерживается');
+        }
+
+        // Вершинный шейдер
+        const vertexShaderSource = `
+        attribute vec2 aPosition;
+        attribute vec3 aColor;
+        varying vec3 vColor;
+        uniform vec2 uScale;
+
+        void main() {
+            vec2 scaledPosition = aPosition * uScale;
+            gl_Position = vec4(scaledPosition, 0.0, 1.0);
+            vColor = aColor;
+        }`;
+
+        // Фрагментный шейдер
+        const fragmentShaderSource = `
+        precision mediump float;
+        varying vec3 vColor;
+
+        void main() {
+            gl_FragColor = vec4(vColor, 1.0);
+        }`;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                throw new Error('Shader compile error');
+            }
+            return shader;
+        }
+
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                throw new Error('Program link error');
+            }
+            return program;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+
+        gl.useProgram(program);
+
+        // Инициализация круга
+        const numSegments = 100;
+        const positions = [0, 0]; // Центр круга
+        const colors = [1, 1, 1]; // Белый центр
+
+        for (let i = 0; i <= numSegments; i++) {
+            const angle = (i / numSegments) * Math.PI * 2;
+            const x = Math.cos(angle);
+            const y = Math.sin(angle);
+            positions.push(x, y);
+
+            // Угол => HSV => RGB
+            const hue = i / numSegments;
+            const rgb = hsvToRgb(hue, 1, 1);
+            colors.push(...rgb);
+        }
+
+        const indices = [];
+        for (let i = 1; i <= numSegments; i++) {
+            indices.push(0, i, i + 1);
+        }
+
+        indices[indices.length - 1] = 1;
+
+        function hsvToRgb(h, s, v) {
+            const f = (n, k = (n + h * 6) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+            return [f(5), f(3), f(1)];
+        }
+
+        // Буферы
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+        // Артибуты
+        const positionLocation = gl.getAttribLocation(program, 'aPosition');
+        gl.enableVertexAttribArray(positionLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const colorLocation = gl.getAttribLocation(program, 'aColor');
+        gl.enableVertexAttribArray(colorLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+        // Uniform'ы
+        const scaleLocation = gl.getUniformLocation(program, 'uScale');
+        let scaleX = 1;
+        let scaleY = 1;
+
+        function render() {
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.uniform2f(scaleLocation, scaleX, scaleY);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        }
+
+        render();
+
+        // Обработчики
+        document.getElementById('scaleX').addEventListener('input', (e) => {
+            scaleX = parseFloat(e.target.value);
+            render();
+        });
+
+        document.getElementById('scaleY').addEventListener('input', (e) => {
+            scaleY = parseFloat(e.target.value);
+            render();
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+            scaleX = 1;
+            scaleY = 1;
+            render();
+        });
+    </script>
+</body>
+</html>
