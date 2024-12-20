@@ -357,13 +357,17 @@ function draw()
     load_obj.style.display = 'inline'
 }
 
-function lerpUVWithZ(uv1, z1, uv2, z2, t) {
-    // Интерполяция UV с учетом перспективы
-    const invZ = 1 / (z1 + t * (z2 - z1));
-    const u = (uv1[0] / z1) + t * ((uv2[0] / z2) - (uv1[0] / z1));
-    const v = (uv1[1] / z1) + t * ((uv2[1] / z2) - (uv1[1] / z1));
+function lerpUVPersp(uvStart, uvEnd, zStart, zEnd, t) {
+    const wStart = 1 / zStart;
+    const wEnd = 1 / zEnd;
+    const w = wStart + t * (wEnd - wStart);
 
-    return [u * invZ, v * invZ];
+    const uv = [
+        (uvStart[0] * wStart + t * (uvEnd[0] * wEnd - uvStart[0] * wStart)) / w,
+        (uvStart[1] * wStart + t * (uvEnd[1] * wEnd - uvStart[1] * wStart)) / w
+    ];
+
+    return uv;
 }
 
 function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, height, minZ, maxZ, normal, textureCoords) 
@@ -400,8 +404,8 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             normalStart = normal_lerp(n0, n1, t0);
             normalEnd = normal_lerp(n0, n2, t1);
 
-            uvStart = lerpUV(vt0, vt1, t0);
-            uvEnd = lerpUV(vt0, vt2, t1);
+            uvStart = lerpUVPersp(vt0, vt1,zStart,zEnd, t0);
+            uvEnd = lerpUVPersp(vt0, vt2, zStart, zEnd, t1);
 
             cStart = color_lerp(color0, color1, t0);
             cEnd = color_lerp(color0, color2, t1);
@@ -418,8 +422,8 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             normalStart = normal_lerp(n1, n2, t0);
             normalEnd = normal_lerp(n0, n2, t1);
         
-            uvStart = lerpUV(vt1, vt2, t0); // Интерполяция текстурных координат
-            uvEnd = lerpUV(vt0, vt2, t1);  // Интерполяция текстурных координат
+            uvStart = lerpUVPersp(vt1, vt2, zStart, zEnd, t0); // Интерполяция текстурных координат
+            uvEnd = lerpUVPersp(vt0, vt2, zStart, zEnd, t1);  // Интерполяция текстурных координат
 
             cStart = color_lerp(color1, color2, t0);
             cEnd = color_lerp(color0, color2, t1);
@@ -452,7 +456,7 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
             const index = Math.floor(y) * width + Math.floor(x);
 
             // Индекс в Z-буфере
-            const uv = lerpUV(uvStart, uvEnd, t);
+            const uv = lerpUVPersp(uvStart, uvEnd, zStart, zEnd, t);
             // Обновление Z-буфера, если пиксель ближе
             if (z > zBuffer[index]) 
             {
@@ -461,6 +465,8 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
                 if (curShading === 0)          normalBuffer[index] = [...normal]
                 else if (curShading === 2)     normalBuffer[index] = calculated_normal;//Phong
                 else if(curShading === 1)      colorBuffer[index] = color_lerp(cStart, cEnd, t);//Guro
+                // else if(curShading === 1)      colorBuffer[index] = color_lerp(color, color, t);//Guro
+
                 colorBuffer[index] = color;
             }
 
