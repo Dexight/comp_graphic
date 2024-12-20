@@ -462,10 +462,10 @@ function rasterizeTriangle(triangle, zBuffer, normalBuffer, colorBuffer, width, 
                 const color = getTextureColor(u, v);
                 if (curShading === 0)          normalBuffer[index] = [...normal]
                 else if (curShading === 2)     normalBuffer[index] = calculated_normal;//Phong
-                else if(curShading === 1)      colorBuffer[index] = color_lerp(cStart, cEnd, t);//Guro
+                else if(curShading === 1)      colorBuffer[index] = color //color_lerp(cStart, cEnd, t);//Guro
                 // else if(curShading === 1)      colorBuffer[index] = color_lerp(color, color, t);//Guro
 
-                colorBuffer[index] = color;
+                // colorBuffer[index] = color;
             }
 
             // Обновление z границ;
