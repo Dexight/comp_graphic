@@ -52,12 +52,11 @@ document.getElementById('useFileNormalsCheckbox').addEventListener('change', (e)
     draw();
 });
 
-//==============Textures===========
 let textureImage = null;  // Глобальное изображение
 let textureCanvas = document.createElement('canvas');
 let textureCtx = textureCanvas.getContext('2d');
 
-//загрузка текстуры из файла
+// Загрузка текстуры из файла 
 function loadTexture() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -71,8 +70,28 @@ function loadTexture() {
                 img.onload = () => {
                     textureCanvas.width = img.width;
                     textureCanvas.height = img.height;
+
                     textureCtx.drawImage(img, 0, 0);
-                    textureImage = textureCtx.getImageData(0, 0, img.width, img.height);
+
+                    const imageData = textureCtx.getImageData(0, 0, img.width, img.height);
+                    const data = imageData.data;
+
+                    const flippedData = new Uint8ClampedArray(data.length);
+                    for (let y = 0; y < img.height; y++) {
+                        for (let x = 0; x < img.width; x++) {
+                            const srcIndex = (y * img.width + x) * 4;
+                            const dstIndex = ((img.height - y - 1) * img.width + x) * 4;
+                            flippedData[dstIndex] = data[srcIndex];
+                            flippedData[dstIndex + 1] = data[srcIndex + 1];
+                            flippedData[dstIndex + 2] = data[srcIndex + 2];
+                            flippedData[dstIndex + 3] = data[srcIndex + 3];
+                        }
+                    }
+
+                    const flippedImageData = new ImageData(flippedData, img.width, img.height);
+                    textureCtx.putImageData(flippedImageData, 0, 0);
+
+                    textureImage = flippedImageData;
                     console.log('Текстура загружена');
                     draw();
                 };
@@ -84,15 +103,6 @@ function loadTexture() {
     input.click();
 }
 
-//интерполяция
-function lerpUV(uv1, uv2, t) {
-    return [
-        uv1[0] + (uv2[0] - uv1[0]) * t,
-        uv1[1] + (uv2[1] - uv1[1]) * t
-    ];
-}
-
-//==============Textures===========
 
 //=======Z-buffer=======
 
