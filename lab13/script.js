@@ -10,11 +10,12 @@ in vec2 aTexCoord;
 in vec3 aOffset;
 
 uniform mat4 uMVPMatrix;
+uniform mat4 uModelMatrix;
 
 out vec2 vTexCoord;
 
 void main() {
-    gl_Position = uMVPMatrix * vec4(aPosition + aOffset, 1.0);
+    gl_Position = uMVPMatrix * uModelMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0);
     vTexCoord = aTexCoord;
     vTexCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y); // Invert Y coordinate
 }
@@ -74,7 +75,6 @@ async function loadOBJ(url) {
 
     const positions = [];
     const texCoords = [];
-    //const indices = [];
     const finalPositions = [];
     const finalTexCoords = [];
 
@@ -141,20 +141,55 @@ async function loadOBJ(url) {
     gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aTexCoord);
 
+    // Создание буфера для смещений
+    const offsets = new Float32Array([
+        -20.0, 0.0, 0.0,  
+        20.0, 0.0, 0.0,   
+        40.0, 0.0, 0.0,    
+        -40.0, 0.0, 0.0,    
+        0.0, 0.0, 0.0     
+    ]);
+
+    const offsetBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, offsets, gl.STATIC_DRAW);
+
+    // Получение местоположения атрибута aOffset
+    const aOffsetLocation = gl.getAttribLocation(program, "aOffset");
+    gl.enableVertexAttribArray(aOffsetLocation);
+    gl.vertexAttribPointer(aOffsetLocation, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribDivisor(aOffsetLocation, 1); // Устанавливаем делитель
+
     // Матрица проекций
     const uMVPMatrix = gl.getUniformLocation(program, "uMVPMatrix");
+    const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
     const mvpMatrix = mat4.create();
+    const modelMatrix = mat4.create();
     mat4.perspective(mvpMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
-    mat4.translate(mvpMatrix, mvpMatrix, [0, 0, -20]);
-    mat4.rotateY(mvpMatrix, mvpMatrix, Math.PI / 2);
+    mat4.translate(mvpMatrix, mvpMatrix, [0, 0, -50]);
+    //mat4.rotateX(mvpMatrix, mvpMatrix, Math.PI / 4);
+
+    let angle = 0;
 
     // Рендеринг
     function render() {
+        angle += 0.01;
+
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+        mat4.identity(modelMatrix);
+        mat4.rotateY(modelMatrix, modelMatrix, angle); ////////////////////////////////
+        gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
         gl.uniformMatrix4fv(uMVPMatrix, false, mvpMatrix);
 
-        gl.drawArrays(gl.TRIANGLES, 0, obj.positions.length / 3);
+        // Устанавливаем текстуру
+        const uTextureLocation = gl.getUniformLocation(program, "uTexture");
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(uTextureLocation, 0);
+
+        // Отрисовка экземпляров
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, obj.positions.length / 3, 5);
 
         requestAnimationFrame(render);
     }
