@@ -171,13 +171,107 @@ async function loadOBJ(url) {
 
     let angle = 0;
 
+    //======Камера==========
+     //Камера
+     let cameraPosition = vec3.fromValues(0, 0, -5);
+     let cameraTarget = vec3.fromValues(0, 0, 0);
+     let cameraUp = vec3.fromValues(0, 1, 0);
+     const speedDelta = 0.5;
+     const rotationSpeed = 0.05;
+
+     function updateModelViewMatrix(){
+         mat4.identity(modelMatrix);
+         mat4.lookAt(modelMatrix, cameraPosition, cameraTarget, cameraUp);
+     }
+
+     // Функция для обновления матрицы проекции
+     function updateProjectionMatrix() {
+         mat4.perspective(uMVPMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 1000.0);
+     }
+
+     function rotateCamera(yaw, pitch) {
+        // Создаём матрицу поворота
+        const rotationMatrix = mat4.create();
+        mat4.rotateY(rotationMatrix, rotationMatrix, yaw); // Поворот вокруг оси Y
+        mat4.rotateX(rotationMatrix, rotationMatrix, pitch); // Поворот вокруг оси X
+
+        // Применяем поворот к направлению камеры
+        const direction = vec3.create();
+        vec3.subtract(direction, cameraTarget, cameraPosition);
+        vec3.transformMat4(direction, direction, rotationMatrix);
+        vec3.add(cameraTarget, cameraPosition, direction);
+    }
+
+    //обработчики
+    document.addEventListener("keydown", (event) => {
+        console.log(event.key);
+        const dir = vec3.create();
+        vec3.subtract(dir, cameraTarget, cameraPosition);
+        vec3.normalize(dir, dir);
+        switch (event.key) {
+            // case "+":
+            //     // console.log('plus');
+            //     mixRatio = Math.min(1, mixRatio + 0.1);
+            //     // render();
+            //     break;
+            // case "-":
+            //     mixRatio = Math.max(0, mixRatio - 0.1);
+            //     // render();
+            //     break;
+            case "ArrowLeft":
+                cameraPosition[0] -= speedDelta;
+                cameraTarget[0] -= speedDelta;
+                break;
+            case "ArrowRight":
+                cameraPosition[0] += speedDelta;
+                cameraTarget[0] += speedDelta;
+                break;    
+            case "ArrowUp":
+                cameraPosition[1] += speedDelta;
+                cameraTarget[1] += speedDelta;
+                break;
+            case "ArrowDown":
+                cameraPosition[1] -= speedDelta;
+                cameraTarget[1] -= speedDelta;
+                break;
+
+            case "w":
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, dir, speedDelta);
+                vec3.scaleAndAdd(cameraTarget, cameraTarget, dir, speedDelta);
+                break;
+            case "s":
+                vec3.scaleAndAdd(cameraPosition, cameraPosition, dir, -speedDelta);
+                vec3.scaleAndAdd(cameraTarget, cameraTarget, dir, -speedDelta);
+                break;
+             // Повороты камеры
+            case "k": // Поворот влево
+                rotateCamera(-rotationSpeed, 0);
+                break;
+            case "l": // Поворот вправо
+                rotateCamera(rotationSpeed, 0);
+                break;
+            case "u": // Поворот вверх
+                rotateCamera(0, -rotationSpeed);
+                break;
+            case "j": // Поворот вниз
+                rotateCamera(0, rotationSpeed);
+                break;
+            }
+
+        updateModelViewMatrix();
+    });
+
+
+
     // Рендеринг
     function render() {
         angle += 0.01;
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        mat4.identity(modelMatrix);
+        // mat4.identity(modelMatrix);
+        updateModelViewMatrix();
+        updateProjectionMatrix();
         mat4.rotateY(modelMatrix, modelMatrix, angle); ////////////////////////////////
         gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
         gl.uniformMatrix4fv(uMVPMatrix, false, mvpMatrix);
