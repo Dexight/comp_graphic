@@ -69,7 +69,8 @@ function createProgram(gl, vertexSource, fragmentSource) {
 }
 
 // Загрузка OBJ-файла и преобразование граней
-async function loadOBJ(url) {
+async function loadOBJ(url) 
+{
     const response = await fetch(url);
     const text = await response.text();
 
@@ -80,15 +81,31 @@ async function loadOBJ(url) {
 
     text.split("\n").forEach((line) => {
         const parts = line.trim().split(/\s+/);
-        if (parts[0] === "v") {
+        if (parts[0] === "v") 
+        {
             positions.push(parts.slice(1).map(Number));
-        } else if (parts[0] === "vt") {
+        } 
+        else if (parts[0] === "vt") 
+        {
             texCoords.push(parts.slice(1).map(Number));
-        } else if (parts[0] === "f") {
-            for (let i = 1; i < parts.length; i++) {
-                const [posIdx, texIdx] = parts[i].split("/").map((n) => parseInt(n) - 1);
-                finalPositions.push(...positions[posIdx]);
-                finalTexCoords.push(...texCoords[texIdx]);
+        } 
+        else if (parts[0] === "f") 
+        {
+            const faceIndices = parts.slice(1).map((part) => {
+                const [posIdx, texIdx] = part.split("/").map((n) => parseInt(n) - 1);
+                return { posIdx, texIdx };
+            });
+
+            for (let i = 1; i < faceIndices.length - 1; i++) 
+            {
+                const tri = [faceIndices[0], faceIndices[i], faceIndices[i + 1]];
+                tri.forEach(({ posIdx, texIdx }) => {
+                    finalPositions.push(...positions[posIdx]);
+                    if (texIdx !== undefined && texIdx >= 0) 
+                    {
+                        finalTexCoords.push(...texCoords[texIdx]);
+                    }
+                });
             }
         }
     });
@@ -97,12 +114,14 @@ async function loadOBJ(url) {
 }
 
 // Основной код
-(async function main() {
+(async function main() 
+{
     const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
 
     // Загрузка и преобразование OBJ-файла
-    const obj = await loadOBJ("bus2.obj");
+    const obj = await loadOBJ("kinder.obj");
+    //const obj2 = await loadOBJ()
 
     // Создание и привязка буферов
     const positionBuffer = gl.createBuffer();
@@ -122,7 +141,7 @@ async function loadOBJ(url) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
     const image = new Image();
-    image.src = "bus2.png";
+    image.src = "kinder.png";
     image.onload = () => {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
