@@ -185,14 +185,6 @@ async function loadOBJ(url)
 
     const uTextureLocation = gl.getUniformLocation(program, "uTexture");
 
-    // Создание буфера для смещений
-    const offsets = new Float32Array([
-        -20.0, 5.0, 0.0,  
-        20.0, -5.0, 0.0,   
-        40.0, 0.0, 0.0,    
-        -40.0, 10.0, 0.0
-    ]);
-
     const offsetBuffer = gl.createBuffer();
     
     const offsets2 = new Float32Array([
@@ -246,72 +238,86 @@ async function loadOBJ(url)
         vec3.add(cameraTarget, cameraPosition, direction);
     }
 
+    const kinderAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2]; // Начальные углы для каждого kinder
+    const orbitRadius = 20; // Радиус орбиты
+
     // Рендеринг
     function render() {
-        angle += 0.01;
-
+        angle += 0.04;
+    
+        // Обновляем углы для каждого kinder
+        for (let i = 0; i < kinderAngles.length; i++) {
+            kinderAngles[i] += 0.01; // Скорость вращения
+        }
+    
+        // Обновляем позиции kinder на основе углов (вращение по оси Y)
+        const newOffsets = new Float32Array([
+            Math.cos(kinderAngles[0]) * orbitRadius, 5.0, Math.sin(kinderAngles[0]) * orbitRadius,
+            Math.cos(kinderAngles[1]) * orbitRadius, -5.0, Math.sin(kinderAngles[1]) * orbitRadius,
+            Math.cos(kinderAngles[2]) * orbitRadius, -10.0, Math.sin(kinderAngles[2]) * orbitRadius,
+            Math.cos(kinderAngles[3]) * orbitRadius, 10.0, Math.sin(kinderAngles[3]) * orbitRadius
+        ]);
+    
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        
+    
         updateModelViewMatrix();
         updateProjectionMatrix();
-        mat4.rotateY(modelMatrix, modelMatrix, angle); ////////////////////////////////
+        mat4.rotateY(modelMatrix, modelMatrix, angle);
         gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
         gl.uniformMatrix4fv(uMVPMatrix, false, mvpMatrix);
-
+    
         //kinder
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
         gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aPosition);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
         gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aTexCoord);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, offsets, gl.STATIC_DRAW);
-
+        gl.bufferData(gl.ARRAY_BUFFER, newOffsets, gl.STATIC_DRAW); // Обновляем буфер смещений
+    
         gl.enableVertexAttribArray(aOffsetLocation);
         gl.vertexAttribPointer(aOffsetLocation, 3, gl.FLOAT, false, 0, 0);
-        gl.vertexAttribDivisor(aOffsetLocation, 1); // Устанавливаем делитель
-
+        gl.vertexAttribDivisor(aOffsetLocation, 1);
+    
         // Устанавливаем текстуру kinder
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.uniform1i(uTextureLocation, 0);
-
+    
         // Отрисовка экземпляров
         gl.drawArraysInstanced(gl.TRIANGLES, 0, obj.positions.length / 3, 4);
-
+    
         //balloon
         mat4.rotateY(modelMatrix, modelMatrix, angle);
-        mat4.scale(modelMatrix, modelMatrix, [1.0, 1.0, 1.0]); // Масштабируем (увеличиваем в 2 раза)    
-        // Обновляем модельную матрицу с масштабированием
         gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
         gl.uniformMatrix4fv(uMVPMatrix, false, mvpMatrix);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer2);
         gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aPosition);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer2);
         gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(aTexCoord);
-
+    
         gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer2);
         gl.bufferData(gl.ARRAY_BUFFER, offsets2, gl.STATIC_DRAW);
-
+    
         gl.enableVertexAttribArray(aOffsetLocation);
         gl.vertexAttribPointer(aOffsetLocation, 3, gl.FLOAT, false, 0, 0);
-        gl.vertexAttribDivisor(aOffsetLocation, 1); // Устанавливаем делитель
-
+        gl.vertexAttribDivisor(aOffsetLocation, 1);
+    
         // Устанавливаем текстуру balloon
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, texture2);
         gl.uniform1i(uTextureLocation, 0);
-
+    
         // Отрисовка экземпляров
         gl.drawArraysInstanced(gl.TRIANGLES, 0, obj.positions.length / 3, 1);
-
+    
         requestAnimationFrame(render);
     }
 
