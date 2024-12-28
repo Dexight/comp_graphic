@@ -15,7 +15,18 @@ uniform mat4 uModelMatrix;
 out vec2 vTexCoord;
 
 void main() {
-    gl_Position = uMVPMatrix * uModelMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0);
+
+float scale = 1.0 + abs(aOffset.z) * 0.01;
+    mat4 scaleMatrix = mat4(
+        scale, 0.0, 0.0, 0.0,
+        0.0, scale, 0.0, 0.0,
+        0.0, 0.0, scale, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    );
+
+
+    gl_Position = uMVPMatrix * uModelMatrix * scaleMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0);
+   
     vTexCoord = aTexCoord;
     vTexCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y); // Invert Y coordinate
 }
@@ -197,7 +208,7 @@ async function loadOBJ(url)
     const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
     const mvpMatrix = mat4.create();
     const modelMatrix = mat4.create();
-    mat4.perspective(mvpMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 3000.0);
+    mat4.perspective(mvpMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, Infinity);
     mat4.translate(mvpMatrix, mvpMatrix, [0, 0, -100]);
     //mat4.rotateX(mvpMatrix, mvpMatrix, Math.PI / 4);
 
@@ -218,7 +229,7 @@ async function loadOBJ(url)
 
      // Функция для обновления матрицы проекции
      function updateProjectionMatrix() {
-        mat4.perspective(uMVPMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 3000.0);
+        mat4.perspective(uMVPMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, Infinity);
      }
      
      function rotateCamera(yaw, pitch) {
@@ -248,10 +259,10 @@ async function loadOBJ(url)
     
         // Обновляем позиции kinder на основе углов (вращение по оси Y)
         const newOffsets = new Float32Array([
-            Math.cos(kinderAngles[0]) * orbitRadius, -5.0, Math.sin(kinderAngles[0]) * orbitRadius - 100,
-            Math.cos(kinderAngles[1]) * orbitRadius, -5.0, Math.sin(kinderAngles[1]) * orbitRadius - 100,
-            Math.cos(kinderAngles[2]) * orbitRadius, -5.0, Math.sin(kinderAngles[2]) * orbitRadius - 100,
-            Math.cos(kinderAngles[3]) * orbitRadius, -5.0, Math.sin(kinderAngles[3]) * orbitRadius - 100
+            Math.cos(kinderAngles[0]) * orbitRadius, -5.0, Math.sin(kinderAngles[0]) * orbitRadius - 50,
+            Math.cos(kinderAngles[1]) * orbitRadius, -5.0, Math.sin(kinderAngles[1]) * orbitRadius - 50,
+            Math.cos(kinderAngles[2]) * orbitRadius, -5.0, Math.sin(kinderAngles[2]) * orbitRadius - 50,
+            Math.cos(kinderAngles[3]) * orbitRadius, -5.0, Math.sin(kinderAngles[3]) * orbitRadius - 50
         ]);
     
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -289,7 +300,7 @@ async function loadOBJ(url)
     
         //balloon
         const offsets2 = new Float32Array([
-            0.0, 0.0, -100.0,  
+            0.0, 0.0, -50.0,  
         ]);
 
         updateModelViewMatrix();
@@ -327,6 +338,7 @@ async function loadOBJ(url)
 
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
+    //gl.depthFunc(gl.GREATER);
     render();
 
     //обработчики
