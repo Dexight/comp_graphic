@@ -16,16 +16,17 @@ out vec2 vTexCoord;
 
 void main() {
 
-float scale = 1.0 + abs(aOffset.z) * 0.01;
+    /*
+    float scale = 1.0 + abs(aOffset.z) * 0.01;
     mat4 scaleMatrix = mat4(
         scale, 0.0, 0.0, 0.0,
         0.0, scale, 0.0, 0.0,
         0.0, 0.0, scale, 0.0,
         0.0, 0.0, 0.0, 1.0
-    );
+    );*/
 
 
-    gl_Position = uMVPMatrix * uModelMatrix * scaleMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0);
+    gl_Position = uMVPMatrix * ( uModelMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0)); //* scaleMatrix;
    
     vTexCoord = aTexCoord;
     vTexCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y); // Invert Y coordinate
@@ -208,8 +209,8 @@ async function loadOBJ(url)
     const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
     const mvpMatrix = mat4.create();
     const modelMatrix = mat4.create();
-    mat4.perspective(mvpMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, Infinity);
-    mat4.translate(mvpMatrix, mvpMatrix, [0, 0, -100]);
+    mat4.perspective(mvpMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, Infinity);
+    //mat4.translate(mvpMatrix, mvpMatrix, [0, 0, -100]);
     //mat4.rotateX(mvpMatrix, mvpMatrix, Math.PI / 4);
 
     let angle = 0;
@@ -229,7 +230,7 @@ async function loadOBJ(url)
 
      // Функция для обновления матрицы проекции
      function updateProjectionMatrix() {
-        mat4.perspective(uMVPMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, Infinity);
+        //mat4.perspective(uMVPMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, Infinity);
      }
      
      function rotateCamera(yaw, pitch) {
