@@ -8,16 +8,21 @@ precision highp float;
 in vec3 aPosition;
 in vec2 aTexCoord;
 in vec3 aOffset;
+in vec3 aNormal;
 
 uniform mat4 uMVPMatrix;
 uniform mat4 uModelMatrix;
 
 out vec2 vTexCoord;
+out vec3 vPosition;
+out vec3 vNormal;
 
 void main() {
-    gl_Position = uMVPMatrix * (uModelMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0));
-    vTexCoord = aTexCoord;
-    vTexCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y); // Invert Y coordinate
+    vec4 worldPosition = uModelMatrix * vec4(aPosition, 1.0) + vec4(aOffset, 0.0);
+    gl_Position = uMVPMatrix * worldPosition;
+    vTexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y); // Invert Y coordinate
+    vPosition = worldPosition.xyz;
+    vNormal = mat3(uModelMatrix) * aNormal; // Transform normal to world space
 }
 `;
 
@@ -25,13 +30,46 @@ const fragmentShaderSource = `#version 300 es
 precision highp float;
 
 in vec2 vTexCoord;
+in vec3 vPosition;
+in vec3 vNormal;
 
 uniform sampler2D uTexture;
+
+uniform vec3 uPointLightPosition;
+uniform vec3 uPointLightColor;
+uniform vec3 uDirectionalLightDirection;
+uniform vec3 uDirectionalLightColor;
+uniform vec3 uSpotLightPosition;
+uniform vec3 uSpotLightDirection;
+uniform vec3 uSpotLightColor;
+uniform float uSpotLightCutoff;
+uniform float uSpotLightExponent;
 
 out vec4 fragColor;
 
 void main() {
-    fragColor = texture(uTexture, vTexCoord);
+    vec4 texColor = texture(uTexture, vTexCoord);
+
+    // Ambient light
+    vec3 ambient = 0.1 * texColor.rgb;
+
+    // Point light
+    vec3 pointLightDir = normalize(uPointLightPosition - vPosition);
+    float pointLightDistance = length(uPointLightPosition - vPosition);
+    vec3 pointLight = uPointLightColor * max(dot(pointLightDir, normalize(vNormal)), 0.0);
+
+    // Directional light
+    vec3 directionalLight = uDirectionalLightColor * max(dot(normalize(uDirectionalLightDirection), normalize(vNormal)), 0.0); 
+
+    // Spot light
+    vec3 spotLightDir = normalize(uSpotLightPosition - vPosition);
+    float spotEffect = dot(spotLightDir, normalize(-uSpotLightDirection));
+    float spot = float(spotEffect > uSpotLightCutoff);     // Ограничение зоны влияния прожектора
+    spotEffect = max(pow(spotEffect, uSpotLightExponent), 0.0);     // Экспоненциальное затухание к краям зоны влияния
+    vec3 spotLight = spot * uSpotLightColor * max(dot(spotLightDir, normalize(vNormal)), 0.0); // * spotEffect;
+
+    vec3 lighting = ambient + pointLight + directionalLight + spotLight;
+    fragColor = vec4(lighting * texColor.rgb, texColor.a);
 }
 `;
 
@@ -84,6 +122,7 @@ class GLObject
         this.scale = scale;
         this.positionBuffer = null;
         this.texCoordBuffer = null;
+        this.normalBuffer = null; // Добавляем буфер для нормалей
         this.texture = null;
         this.offsets = new Float32Array([0.0, 0.0, 0.0]);
         this.objData = null;
@@ -102,6 +141,10 @@ class GLObject
         this.texCoordBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.texCoordBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.objData.texCoords), this.gl.STATIC_DRAW);
+
+        this.normalBuffer = this.gl.createBuffer(); // Создаем буфер для нормалей
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.objData.normals), this.gl.STATIC_DRAW);
 
         // Создание текстуры
         this.texture = this.gl.createTexture();
@@ -192,6 +235,11 @@ class GLObject
         this.gl.vertexAttribPointer(aTexCoord, 2, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(aTexCoord);
 
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBuffer); // Привязываем буфер нормалей
+        const aNormal = this.gl.getAttribLocation(this.program, "aNormal");
+        this.gl.vertexAttribPointer(aNormal, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(aNormal);
+
         const offsetBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, offsetBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, this.offsets, this.gl.STATIC_DRAW);
@@ -211,7 +259,6 @@ class GLObject
         this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, this.objData.positions.length / 3, this.offsets.length / 3);
     }
 }
-
 // Основной код
 (async function main() 
 {
@@ -242,6 +289,17 @@ class GLObject
     const uMVPMatrix = gl.getUniformLocation(program, "uMVPMatrix");
     const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
 
+    // Источники света
+    const uPointLightPosition = gl.getUniformLocation(program, "uPointLightPosition");
+    const uPointLightColor = gl.getUniformLocation(program, "uPointLightColor");
+    const uDirectionalLightDirection = gl.getUniformLocation(program, "uDirectionalLightDirection");
+    const uDirectionalLightColor = gl.getUniformLocation(program, "uDirectionalLightColor");
+    const uSpotLightPosition = gl.getUniformLocation(program, "uSpotLightPosition");
+    const uSpotLightDirection = gl.getUniformLocation(program, "uSpotLightDirection");
+    const uSpotLightColor = gl.getUniformLocation(program, "uSpotLightColor");
+    const uSpotLightCutoff = gl.getUniformLocation(program, "uSpotLightCutoff");
+    const uSpotLightExponent = gl.getUniformLocation(program, "uSpotLightExponent");
+
     // Матрица проекций
     const mvpMatrix = mat4.create();
     const modelMatrix = mat4.create();
@@ -256,6 +314,43 @@ class GLObject
         mat4.identity(modelMatrix);
         mat4.lookAt(modelMatrix, cameraPosition, cameraTarget, cameraUp);
     }
+
+    // Параметры источников света
+    let pointLightPosition = [10.0, 10.0, 10.0];
+    let spotLightPosition = [5.0, 5.0, 5.0];
+    let spotLightCutoff = Math.cos(Math.PI / 20);
+
+    // Обработчики для ползунков
+    document.getElementById('pointLightX').addEventListener('input', (event) => {
+        pointLightPosition[0] = parseFloat(event.target.value);
+    });
+    document.getElementById('pointLightY').addEventListener('input', (event) => {
+        pointLightPosition[1] = parseFloat(event.target.value);
+    });
+    document.getElementById('pointLightZ').addEventListener('input', (event) => {
+        pointLightPosition[2] = parseFloat(event.target.value);
+    });
+    document.getElementById('spotLightX').addEventListener('input', (event) => {
+        spotLightPosition[0] = parseFloat(event.target.value);
+    });
+    document.getElementById('spotLightY').addEventListener('input', (event) => {
+        spotLightPosition[1] = parseFloat(event.target.value);
+    });
+    document.getElementById('spotLightZ').addEventListener('input', (event) => {
+        spotLightPosition[2] = parseFloat(event.target.value);
+    });
+    document.getElementById('spotLightCutoff').addEventListener('input', (event) => {
+        spotLightCutoff = Math.cos(parseFloat(event.target.value) * Math.PI / 180);
+    });
+    document.getElementById('pointLightEnabled').addEventListener('change', (event) => {
+        pointLightEnabled = event.target.checked;
+    });
+    document.getElementById('spotLightEnabled').addEventListener('change', (event) => {
+        spotLightEnabled = event.target.checked;
+    });
+    document.getElementById('directLightEnabled').addEventListener('change', (event) => {
+        directLightEnabled = event.target.checked;
+    });
 
     // Рендеринг
     function render() 
@@ -279,6 +374,31 @@ class GLObject
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         updateModelViewMatrix();
+
+         // Установка параметров источников света
+        if (pointLightEnabled) {
+            gl.uniform3fv(uPointLightPosition, pointLightPosition);
+            gl.uniform3fv(uPointLightColor, [1.0, 1.0, 1.0]);
+        } else {
+            gl.uniform3fv(uPointLightColor, [0.0, 0.0, 0.0]);
+        }
+
+        if (directLightEnabled) {
+            gl.uniform3fv(uDirectionalLightDirection, [1.0, 1.0, 1.0]);
+            gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
+        } else {
+            gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
+        }
+
+        if (spotLightEnabled) {
+            gl.uniform3fv(uSpotLightPosition, spotLightPosition);
+            gl.uniform3fv(uSpotLightDirection, [-1.0, -1.0, -1.0]);
+            gl.uniform3fv(uSpotLightColor, [1.0, 1.0, 1.0]);
+            gl.uniform1f(uSpotLightCutoff, spotLightCutoff);
+            gl.uniform1f(uSpotLightExponent, 2.0);
+        } else {
+            gl.uniform3fv(uSpotLightColor, [0.0, 0.0, 0.0]);
+        }
 
         // Отрисовка kinder
         kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix);
