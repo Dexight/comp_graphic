@@ -163,6 +163,84 @@ void main() {
     fragColor = vec4(lighting * texColor.rgb, texColor.a);
 }`;
 
+const otherFragmentShaderSource = `#version 300 es
+precision highp float;
+
+in vec2 vTexCoord;
+in vec3 vPosition;
+in vec3 vNormal;
+
+uniform sampler2D uTexture;
+
+uniform vec3 uViewPosition;
+
+uniform vec3 uPointLightPosition;
+uniform vec3 uPointLightColor;
+
+uniform vec3 uDirectionalLightDirection;
+uniform vec3 uDirectionalLightColor;
+
+uniform vec3 uSpotLightPosition;
+uniform vec3 uSpotLightDirection;
+uniform vec3 uSpotLightColor;
+uniform float uSpotLightCutoff;
+uniform float uSpotLightExponent;
+
+out vec4 fragColor;
+
+// Функция для вычисления диффузного освещения по модели Орен-Найра
+float orenNayarDiffuse(vec3 normal, vec3 lightDir, vec3 viewDir, float roughness) 
+{
+    float cosThetaI = max(dot(normal, lightDir), 0.0);
+    float cosThetaR = max(dot(normal, viewDir), 0.0);
+
+    //угол между нормалью и направлением света
+    float alpha = max(cosThetaI, cosThetaR); 
+    
+    // Угол между направлением света и наблюдателя
+    float beta = dot(normal, normalize(lightDir + viewDir));
+    
+    // Шероховатость за счёт аппроксимации
+    float A = 1.0 - 0.5 * (roughness * roughness) / (roughness * roughness + 0.57);
+    float B = 0.45 * (roughness * roughness) / (roughness * roughness + 0.09);
+    
+    float E0 = 1.0; //коэффициент отражения
+
+    // Вычисление диффузного освещения по модели Орен-Найра
+    return cosThetaI * (A + B * max(0.0, beta) * sin(alpha) * tan(alpha)) * E0;
+}
+
+void main() {
+    vec4 texColor = texture(uTexture, vTexCoord);
+
+    // Нормализация нормали
+    vec3 normal = normalize(vNormal);
+
+    // Point light
+    vec3 pointLightDir = normalize(uPointLightPosition - vPosition);
+    vec3 viewDir = normalize(uViewPosition - vPosition);
+    
+    // Орен-Найра диффузное освещение для точки света
+    float pointDiffuse = orenNayarDiffuse(normal, pointLightDir, viewDir, 0.8);
+    vec3 pointLight = pointDiffuse * uPointLightColor;
+
+    // Directional light
+    vec3 dirLightDir = normalize(-uDirectionalLightDirection);
+    float dirDiffuse = orenNayarDiffuse(normal, dirLightDir, viewDir, 0.8);
+    vec3 directionalLight = dirDiffuse * uDirectionalLightColor;
+
+    // Spot light
+    vec3 spotLightDir = normalize(uSpotLightPosition - vPosition);
+    float spotEffect = dot(spotLightDir, normalize(-uSpotLightDirection));
+    spotEffect = spotEffect > uSpotLightCutoff ? pow(spotEffect, uSpotLightExponent) : 0.0;
+    float spotDiffuse = orenNayarDiffuse(normal, spotLightDir, viewDir, 0.8);
+    vec3 spotLight = spotEffect * spotDiffuse * uSpotLightColor;
+
+    vec3 lighting = pointLight + directionalLight + spotLight;
+    fragColor = vec4(lighting * texColor.rgb, texColor.a);
+}
+`;
+
 // Компиляция шейдеров
 function compileShader(gl, source, type) 
 {
@@ -219,6 +297,7 @@ class GLObject
         this.objData = null;
         this.programPhong = program;
         this.programToon = createProgram(gl, vertexShaderSource, toonFragmentShaderSource);
+        this.programOther = createProgram(gl, vertexShaderSource, otherFragmentShaderSource);
     }
 
     async changeLightingModel() 
@@ -230,6 +309,10 @@ class GLObject
         else if (this.lighting === "toonshading") 
         {
             this.program = this.programToon;
+        }
+        else if (this.lighting === "other")
+        {
+            this.program = this.programOther;
         }
     }
 
@@ -516,6 +599,8 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
                           break;
             case "toonshading": currentFigure.lighting = "toonshading";
                                 break;
+            case "other": currentFigure.lighting = "other";
+            break;
         }
 
         currentFigure.changeLightingModel();
