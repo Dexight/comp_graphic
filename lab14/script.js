@@ -535,7 +535,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     //Установка смещений для пола
     carpet.setOffsets([0.0, -30.0, -70.0]);
     //Установка смещений для sphere
-    sphere.setOffsets([30.0, -15.0, -80.0]);
+    sphere.setOffsets([30.0, -15.0, -40.0]);
 
     // Матрица проекций
     let mvpMatrix = mat4.create();
