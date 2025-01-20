@@ -513,11 +513,15 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     // Создание объектов
     const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1.5, 1.5, 1.5]);
     const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [4.0, 4.0, 4.0]);
-
+    const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [2.0, 2.0, 2.0]);
+    const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
+    const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
     // Инициализация объектов
     await kinder.init();
     await balloon.init();
-
+    await bus2.init();
+    await carpet.init();
+    await sphere.init();
     // Установка смещений для kinder
     let angle = 0;
     const kinderAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
@@ -525,6 +529,13 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
     // Установка смещений для balloon
     balloon.setOffsets([0.0, 0.0, -50.0]);
+
+    //Установка смещений для bus2 
+    bus2.setOffsets([-30.0, -20.0, -70.0]);
+    //Установка смещений для пола
+    carpet.setOffsets([0.0, -30.0, -70.0]);
+    //Установка смещений для sphere
+    sphere.setOffsets([30.0, -15.0, -80.0]);
 
     // Матрица проекций
     let mvpMatrix = mat4.create();
@@ -584,6 +595,12 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
                             break;
             case "kinders": currentFigure = kinder;
                             break;   
+            case "bus2":    currentFigure = bus2;
+                            break;
+            case "carpet":  currentFigure = carpet;
+                            break;
+            case "sphere":  currentFigure = sphere;
+                            break;
         }
 
         selectLighting.value = currentFigure.lighting;
@@ -666,6 +683,21 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         setParameters(kinder.gl);
         kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
+        //Отрисовка bus2
+        changeLocations(bus2.gl, bus2.program);
+        setParameters(bus2.gl);
+        bus2.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
+        
+        //Отрисовка carpet
+        changeLocations(carpet.gl, carpet.program);
+        setParameters(carpet.gl);
+        carpet.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
+        
+        //отрисовка sphere
+        changeLocations(sphere.gl, sphere.program);
+        setParameters(sphere.gl);
+        sphere.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
+        
         requestAnimationFrame(render);
     }
 
