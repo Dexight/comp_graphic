@@ -231,7 +231,6 @@ class GLObject
         {
             this.program = this.programToon;
         }
-        this.gl.useProgram(this.program);
     }
 
     async init() 
@@ -332,7 +331,10 @@ class GLObject
 
     setOffsets(offsets) { this.offsets = new Float32Array(offsets); }
 
-    render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix) {
+    render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp) 
+    {
+        updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, cameraUp);
+
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
         this.gl.vertexAttribPointer(aPosition, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(aPosition);
@@ -365,11 +367,61 @@ class GLObject
         this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, this.objData.positions.length / 3, this.offsets.length / 3);
     }
 }
+
+let aPosition
+let aTexCoord
+let aOffsetLocation
+let uTextureLocation
+let uMVPMatrix
+let uModelMatrix
+let uPointLightPosition
+let uPointLightColor
+let uDirectionalLightDirection
+let uDirectionalLightColor
+let uSpotLightPosition
+let uSpotLightDirection
+let uSpotLightColor
+let uSpotLightCutoff
+let uSpotLightExponent
+let uViewPosition
+
+function changeLocations(gl, program)
+{
+    gl.useProgram(program);
+
+    // Получение местоположений атрибутов и uniform-переменных
+    aPosition = gl.getAttribLocation(program, "aPosition");
+    aTexCoord = gl.getAttribLocation(program, "aTexCoord");
+    aOffsetLocation = gl.getAttribLocation(program, "aOffset");
+    uTextureLocation = gl.getUniformLocation(program, "uTexture");
+    uMVPMatrix = gl.getUniformLocation(program, "uMVPMatrix");
+    uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
+
+    // Источники света
+    uPointLightPosition = gl.getUniformLocation(program, "uPointLightPosition");
+    uPointLightColor = gl.getUniformLocation(program, "uPointLightColor");
+    uDirectionalLightDirection = gl.getUniformLocation(program, "uDirectionalLightDirection");
+    uDirectionalLightColor = gl.getUniformLocation(program, "uDirectionalLightColor");
+    uSpotLightPosition = gl.getUniformLocation(program, "uSpotLightPosition");
+    uSpotLightDirection = gl.getUniformLocation(program, "uSpotLightDirection");
+    uSpotLightColor = gl.getUniformLocation(program, "uSpotLightColor");
+    uSpotLightCutoff = gl.getUniformLocation(program, "uSpotLightCutoff");
+    uSpotLightExponent = gl.getUniformLocation(program, "uSpotLightExponent");
+
+    // Камера
+    uViewPosition = gl.getUniformLocation(program, "uViewPosition");
+}
+
+function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, cameraUp) 
+{
+    mat4.identity(modelMatrix);
+    mat4.lookAt(modelMatrix, cameraPosition, cameraTarget, cameraUp);
+}
+
 // Основной код
 (async function main() 
 {
     const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
-    gl.useProgram(program);
 
     pointLightEnabled = true;
     spotLightEnabled = false;
@@ -377,7 +429,7 @@ class GLObject
 
     // Создание объектов
     const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1.5, 1.5, 1.5]);
-    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [2.0, 2.0, 2.0]);
+    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [4.0, 4.0, 4.0]);
 
     // Инициализация объектов
     await kinder.init();
@@ -391,41 +443,14 @@ class GLObject
     // Установка смещений для balloon
     balloon.setOffsets([0.0, 0.0, -50.0]);
 
-    // Получение местоположений атрибутов и uniform-переменных
-    const aPosition = gl.getAttribLocation(program, "aPosition");
-    const aTexCoord = gl.getAttribLocation(program, "aTexCoord");
-    const aOffsetLocation = gl.getAttribLocation(program, "aOffset");
-    const uTextureLocation = gl.getUniformLocation(program, "uTexture");
-    const uMVPMatrix = gl.getUniformLocation(program, "uMVPMatrix");
-    const uModelMatrix = gl.getUniformLocation(program, "uModelMatrix");
-
-    // Источники света
-    const uPointLightPosition = gl.getUniformLocation(program, "uPointLightPosition");
-    const uPointLightColor = gl.getUniformLocation(program, "uPointLightColor");
-    const uDirectionalLightDirection = gl.getUniformLocation(program, "uDirectionalLightDirection");
-    const uDirectionalLightColor = gl.getUniformLocation(program, "uDirectionalLightColor");
-    const uSpotLightPosition = gl.getUniformLocation(program, "uSpotLightPosition");
-    const uSpotLightDirection = gl.getUniformLocation(program, "uSpotLightDirection");
-    const uSpotLightColor = gl.getUniformLocation(program, "uSpotLightColor");
-    const uSpotLightCutoff = gl.getUniformLocation(program, "uSpotLightCutoff");
-    const uSpotLightExponent = gl.getUniformLocation(program, "uSpotLightExponent");
-
     // Матрица проекций
-    const mvpMatrix = mat4.create();
-    const modelMatrix = mat4.create();
+    let mvpMatrix = mat4.create();
+    let modelMatrix = mat4.create();
     mat4.perspective(mvpMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, Infinity);
 
-    // Камера
-    const uViewPosition = gl.getUniformLocation(program, "uViewPosition");
     let cameraPosition = vec3.fromValues(0, 0, -5);
     let cameraTarget = vec3.fromValues(0, 0, 0);
     let cameraUp = vec3.fromValues(0, 1, 0);
-
-    function updateModelViewMatrix() 
-    {
-        mat4.identity(modelMatrix);
-        mat4.lookAt(modelMatrix, cameraPosition, cameraTarget, cameraUp);
-    }
 
     // Параметры источников света
     let pointLightPosition = [10.0, 10.0, 10.0];
@@ -518,38 +543,43 @@ class GLObject
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        updateModelViewMatrix();
+        function setParameters(gl)
+        {    
+            // Установка параметров источников света
+            if (pointLightEnabled) {
+                gl.uniform3fv(uPointLightPosition, pointLightPosition);
+                gl.uniform3fv(uPointLightColor, [1.0, 1.0, 1.0]);
+            } else {
+                gl.uniform3fv(uPointLightColor, [0.0, 0.0, 0.0]);
+            }
 
-        // Установка параметров источников света
-        if (pointLightEnabled) {
-            gl.uniform3fv(uPointLightPosition, pointLightPosition);
-            gl.uniform3fv(uPointLightColor, [1.0, 1.0, 1.0]);
-        } else {
-            gl.uniform3fv(uPointLightColor, [0.0, 0.0, 0.0]);
+            if (directLightEnabled) {
+                gl.uniform3fv(uDirectionalLightDirection, [-2.0, 0.0, -1.0]);
+                gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
+            } else {
+                gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
+            }
+
+            if (spotLightEnabled) {
+                gl.uniform3fv(uSpotLightPosition, spotLightPosition);
+                gl.uniform3fv(uSpotLightDirection, [0.0, 0.0, -1.0]);
+                gl.uniform3fv(uSpotLightColor, [1.0, 1.0, 1.0]);
+                gl.uniform1f(uSpotLightCutoff, spotLightCutoff);
+                gl.uniform1f(uSpotLightExponent, 2.0);
+            } else {
+                gl.uniform3fv(uSpotLightColor, [0.0, 0.0, 0.0]);
+            }
         }
-
-        if (directLightEnabled) {
-            gl.uniform3fv(uDirectionalLightDirection, [-2.0, 0.0, -1.0]);
-            gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
-        } else {
-            gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
-        }
-
-        if (spotLightEnabled) {
-            gl.uniform3fv(uSpotLightPosition, spotLightPosition);
-            gl.uniform3fv(uSpotLightDirection, [0.0, 0.0, -1.0]);
-            gl.uniform3fv(uSpotLightColor, [1.0, 1.0, 1.0]);
-            gl.uniform1f(uSpotLightCutoff, spotLightCutoff);
-            gl.uniform1f(uSpotLightExponent, 2.0);
-        } else {
-            gl.uniform3fv(uSpotLightColor, [0.0, 0.0, 0.0]);
-        }
-
-        // Отрисовка kinder
-        kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix);
 
         // Отрисовка balloon
-        balloon.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix);
+        changeLocations(balloon.gl, balloon.program);
+        setParameters(balloon.gl);
+        balloon.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
+
+        // Отрисовка kinder
+        changeLocations(kinder.gl, kinder.program);
+        setParameters(kinder.gl);
+        kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
         requestAnimationFrame(render);
     }
