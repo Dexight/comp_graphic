@@ -1,5 +1,7 @@
 const canvas = document.getElementById("glCanvas");
 const gl = canvas.getContext("webgl2");
+const selectFigure = document.getElementById('figure');
+const selectLighting = document.getElementById('lighting');
 
 // GLSL шейдеры
 const vertexShaderSource = `#version 300 es
@@ -35,10 +37,14 @@ in vec3 vNormal;
 
 uniform sampler2D uTexture;
 
+uniform vec3 uViewPosition;
+
 uniform vec3 uPointLightPosition;
 uniform vec3 uPointLightColor;
+
 uniform vec3 uDirectionalLightDirection;
 uniform vec3 uDirectionalLightColor;
+
 uniform vec3 uSpotLightPosition;
 uniform vec3 uSpotLightDirection;
 uniform vec3 uSpotLightColor;
@@ -50,28 +56,112 @@ out vec4 fragColor;
 void main() {
     vec4 texColor = texture(uTexture, vTexCoord);
 
+    // Нормализация нормали
+    vec3 normal = normalize(vNormal);
+
     // Ambient light
     vec3 ambient = 0.1 * texColor.rgb;
 
     // Point light
     vec3 pointLightDir = normalize(uPointLightPosition - vPosition);
+    vec3 viewDir = normalize(uViewPosition - vPosition);
+    vec3 reflectDirPoint = reflect(-pointLightDir, normal);
+
+    float pointSpecularStrength = 0.5; // Интенсивность зеркального отражения
+    float specPoint = pow(max(dot(viewDir, reflectDirPoint), 0.0), 16.0); // Зеркальный бликовый эффект
+    vec3 pointLightSpecular = pointSpecularStrength * specPoint * uPointLightColor;
+
     float pointLightDistance = length(uPointLightPosition - vPosition);
-    vec3 pointLight = uPointLightColor * max(dot(pointLightDir, normalize(vNormal)), 0.0);
+    vec3 pointLight = uPointLightColor * max(dot(pointLightDir, normal), 0.0) + pointLightSpecular;
 
     // Directional light
-    vec3 directionalLight = uDirectionalLightColor * max(dot(normalize(uDirectionalLightDirection), normalize(vNormal)), 0.0); 
+    vec3 dirLightDir = normalize(-uDirectionalLightDirection);
+    vec3 reflectDirDir = reflect(-dirLightDir, normal);
+
+    float dirSpecularStrength = 0.5;
+    float specDir = pow(max(dot(viewDir, reflectDirDir), 0.0), 16.0);
+    vec3 dirLightSpecular = dirSpecularStrength * specDir * uDirectionalLightColor;
+
+    vec3 directionalLight = uDirectionalLightColor * max(dot(dirLightDir, normal), 0.0) + dirLightSpecular;
 
     // Spot light
     vec3 spotLightDir = normalize(uSpotLightPosition - vPosition);
     float spotEffect = dot(spotLightDir, normalize(-uSpotLightDirection));
-    float spot = float(spotEffect > uSpotLightCutoff);     // Ограничение зоны влияния прожектора
-    spotEffect = max(pow(spotEffect, uSpotLightExponent), 0.0);     // Экспоненциальное затухание к краям зоны влияния
-    vec3 spotLight = spot * uSpotLightColor * max(dot(spotLightDir, normalize(vNormal)), 0.0); // * spotEffect;
+    float spot = float(spotEffect > uSpotLightCutoff);
+    spotEffect = max(pow(spotEffect, uSpotLightExponent), 0.0);
+
+    vec3 reflectDirSpot = reflect(-spotLightDir, normal);
+    float spotSpecularStrength = 0.5;
+    float specSpot = pow(max(dot(viewDir, reflectDirSpot), 0.0), 16.0);
+    vec3 spotLightSpecular = spotSpecularStrength * specSpot * uSpotLightColor;
+
+    vec3 spotLight = spot * (uSpotLightColor * max(dot(spotLightDir, normal), 0.0) + spotLightSpecular);
 
     vec3 lighting = ambient + pointLight + directionalLight + spotLight;
     fragColor = vec4(lighting * texColor.rgb, texColor.a);
 }
 `;
+
+const toonFragmentShaderSource = `#version 300 es
+precision highp float;
+
+in vec2 vTexCoord;
+in vec3 vPosition;
+in vec3 vNormal;
+
+uniform sampler2D uTexture;
+
+uniform vec3 uViewPosition;
+
+uniform vec3 uPointLightPosition;
+uniform vec3 uPointLightColor;
+
+uniform vec3 uDirectionalLightDirection;
+uniform vec3 uDirectionalLightColor;
+
+uniform vec3 uSpotLightPosition;
+uniform vec3 uSpotLightDirection;
+uniform vec3 uSpotLightColor;
+uniform float uSpotLightCutoff;
+uniform float uSpotLightExponent;
+
+out vec4 fragColor;
+
+void main() {
+    vec4 texColor = texture(uTexture, vTexCoord);
+
+    // Нормализация нормали
+    vec3 normal = normalize(vNormal);
+
+    // Ambient light
+    vec3 ambient = 0.1 * texColor.rgb;
+
+    // Toon shading light steps
+    float lightLevels[4] = float[](0.2, 0.5, 0.8, 1.0);
+
+    // Point light
+    vec3 pointLightDir = normalize(uPointLightPosition - vPosition);
+    float pointIntensity = max(dot(normal, pointLightDir), 0.0);
+    float pointStep = lightLevels[int(pointIntensity * 4.0)];
+    vec3 pointLight = pointStep * uPointLightColor;
+
+    // Directional light
+    vec3 dirLightDir = normalize(-uDirectionalLightDirection);
+    float dirIntensity = max(dot(normal, dirLightDir), 0.0);
+    float dirStep = lightLevels[int(dirIntensity * 4.0)];
+    vec3 directionalLight = dirStep * uDirectionalLightColor;
+
+    // Spot light
+    vec3 spotLightDir = normalize(uSpotLightPosition - vPosition);
+    float spotEffect = dot(spotLightDir, normalize(-uSpotLightDirection));
+    spotEffect = spotEffect > uSpotLightCutoff ? pow(spotEffect, uSpotLightExponent) : 0.0;
+    float spotIntensity = max(dot(normal, spotLightDir), 0.0) * spotEffect;
+    float spotStep = lightLevels[int(spotIntensity * 4.0)];
+    vec3 spotLight = spotStep * uSpotLightColor;
+
+    vec3 lighting = ambient + pointLight + directionalLight + spotLight;
+    fragColor = vec4(lighting * texColor.rgb, texColor.a);
+}`;
 
 // Компиляция шейдеров
 function compileShader(gl, source, type) 
@@ -113,12 +203,13 @@ function createProgram(gl, vertexSource, fragmentSource)
 // Класс для работы с объектами
 class GLObject 
 {
-    constructor(gl, program, objUrl, textureUrl, scale = [1.0, 1.0, 1.0]) 
+    constructor(gl, program, objUrl, textureUrl, lighting, scale = [1.0, 1.0, 1.0]) 
     {
         this.gl = gl;
         this.program = program;
         this.objUrl = objUrl;
         this.textureUrl = textureUrl;
+        this.lighting = lighting;
         this.scale = scale;
         this.positionBuffer = null;
         this.texCoordBuffer = null;
@@ -126,6 +217,21 @@ class GLObject
         this.texture = null;
         this.offsets = new Float32Array([0.0, 0.0, 0.0]);
         this.objData = null;
+        this.programPhong = program;
+        this.programToon = createProgram(gl, vertexShaderSource, toonFragmentShaderSource);
+    }
+
+    async changeLightingModel() 
+    {
+        if (this.lighting === "phong") 
+        {
+            this.program = this.programPhong;
+        } 
+        else if (this.lighting === "toonshading") 
+        {
+            this.program = this.programToon;
+        }
+        this.gl.useProgram(this.program);
     }
 
     async init() 
@@ -265,9 +371,13 @@ class GLObject
     const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
     gl.useProgram(program);
 
+    pointLightEnabled = true;
+    spotLightEnabled = false;
+    directLightEnabled = false;
+
     // Создание объектов
-    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", [1.5, 1.5, 1.5]);
-    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", [2.0, 2.0, 2.0]);
+    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1.5, 1.5, 1.5]);
+    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [2.0, 2.0, 2.0]);
 
     // Инициализация объектов
     await kinder.init();
@@ -306,11 +416,13 @@ class GLObject
     mat4.perspective(mvpMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, Infinity);
 
     // Камера
+    const uViewPosition = gl.getUniformLocation(program, "uViewPosition");
     let cameraPosition = vec3.fromValues(0, 0, -5);
     let cameraTarget = vec3.fromValues(0, 0, 0);
     let cameraUp = vec3.fromValues(0, 1, 0);
 
-    function updateModelViewMatrix() {
+    function updateModelViewMatrix() 
+    {
         mat4.identity(modelMatrix);
         mat4.lookAt(modelMatrix, cameraPosition, cameraTarget, cameraUp);
     }
@@ -352,9 +464,42 @@ class GLObject
         directLightEnabled = event.target.checked;
     });
 
+
+    // Обработчик выпадающего списка фигур
+    let currentFigure = balloon;
+    selectFigure.addEventListener('change', (e) => {
+        const selectedValue = e.target.value;
+
+        switch (selectedValue)
+        {
+            case "balloon": currentFigure = balloon;
+                            break;
+            case "kinders": currentFigure = kinder;
+                            break;   
+        }
+
+        selectLighting.value = currentFigure.lighting;
+    });
+
+    // Обработчик света для выбранной фигуры
+    selectLighting.addEventListener('change', (e) => {
+        const selectedValue = e.target.value;
+
+        switch (selectedValue)
+        {
+            case "phong": currentFigure.lighting = "phong";
+                          break;
+            case "toonshading": currentFigure.lighting = "toonshading";
+                                break;
+        }
+
+        currentFigure.changeLightingModel();
+    });
+
     // Рендеринг
     function render() 
     {
+        gl.uniform3fv(uViewPosition, cameraPosition);
         angle += 0.04;
     
         // Обновляем углы для каждого kinder
@@ -375,7 +520,7 @@ class GLObject
 
         updateModelViewMatrix();
 
-         // Установка параметров источников света
+        // Установка параметров источников света
         if (pointLightEnabled) {
             gl.uniform3fv(uPointLightPosition, pointLightPosition);
             gl.uniform3fv(uPointLightColor, [1.0, 1.0, 1.0]);
@@ -384,7 +529,7 @@ class GLObject
         }
 
         if (directLightEnabled) {
-            gl.uniform3fv(uDirectionalLightDirection, [1.0, 1.0, 1.0]);
+            gl.uniform3fv(uDirectionalLightDirection, [-2.0, 0.0, -1.0]);
             gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
         } else {
             gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
@@ -392,7 +537,7 @@ class GLObject
 
         if (spotLightEnabled) {
             gl.uniform3fv(uSpotLightPosition, spotLightPosition);
-            gl.uniform3fv(uSpotLightDirection, [-1.0, -1.0, -1.0]);
+            gl.uniform3fv(uSpotLightDirection, [0.0, 0.0, -1.0]);
             gl.uniform3fv(uSpotLightColor, [1.0, 1.0, 1.0]);
             gl.uniform1f(uSpotLightCutoff, spotLightCutoff);
             gl.uniform1f(uSpotLightExponent, 2.0);
