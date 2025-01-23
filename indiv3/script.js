@@ -78,9 +78,9 @@ void main() {
     vec3 dirLightDir = normalize(-uDirectionalLightDirection);
     vec3 reflectDirDir = reflect(-dirLightDir, normal);
 
-    float dirSpecularStrength = 0.5;
-    float specDir = pow(max(dot(viewDir, reflectDirDir), 0.0), 16.0);
-    vec3 dirLightSpecular = dirSpecularStrength * specDir * uDirectionalLightColor;
+    float dirSpecularStrength = 0.05;
+    //float specDir = pow(max(dot(viewDir, reflectDirDir), 0.0), 16.0);
+    vec3 dirLightSpecular = dirSpecularStrength * uDirectionalLightColor;// * specDir
 
     vec3 directionalLight = uDirectionalLightColor * max(dot(dirLightDir, normal), 0.0) + dirLightSpecular;
 
@@ -658,7 +658,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
             }
 
             if (directLightEnabled) {
-                gl.uniform3fv(uDirectionalLightDirection, [-2.0, 0.0, -1.0]);
+                gl.uniform3fv(uDirectionalLightDirection, [-1.0, -1.0, 0.0]);
                 gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
             } else {
                 gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
