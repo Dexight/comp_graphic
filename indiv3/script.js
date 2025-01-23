@@ -506,37 +506,43 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 {
     const program = createProgram(gl, vertexShaderSource, fragmentShaderSource);
 
-    pointLightEnabled = true;
-    spotLightEnabled = false;
-    directLightEnabled = false;
+    pointLightEnabled = false;
+    spotLightEnabled = true;
+    directLightEnabled = true;
 
     // Создание объектов
-    const kinder = new GLObject(gl, program, "ship.obj", "ship.png", "phong", [8, 8, 8]);
-    const tree = new GLObject(gl, program, "tree.obj", "tree.jpg", "phong", [0.5, 0.5, 0.5]);
-    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [4.0, 4.0, 4.0]);
-    const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
-    const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0])
+    const ship = new GLObject(gl, program, "ship.obj", "ship.png", "phong", [-5, 5, -5]);
+    const tree = new GLObject(gl, program, "tree.obj", "tree.jpg", "phong", [0.1, 0.1, 0.1]);
+    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [1.0, 1.0, 1.0]);
+    const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0]);
+    const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [5.0, 5.0, 5.0]);
+    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phing", [1, 1, 1]);
 
     // Инициализация объектов
-    await kinder.init();
+    await ship.init();
     await tree.init();
     await balloon.init();
     await carpet.init();
     await sphere.init();
+    await kinder.init();
 
-    // Установка смещений для kinder
-    let angle = 0;
-    const kinderAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
-    const orbitRadius = 70;
+    // Установка смещений для ship
+    //let angle = 0;
+    //const shipAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+    //const orbitRadius = 20;
+    let shipSpeed = 0.3;
+    let shift_x = 0;
+    let shift_y = 10;
+    let shift_z = -30;
 
     // Установка смещений для tree
-    tree.setOffsets([0.0, -20.0, -50.0]);
+    tree.setOffsets([0.0, -20.0, -30.0]);
     // Установка смещений для шарика
-    balloon.setOffsets([-100.0, 20.0, -150.0]);
+    balloon.setOffsets([-10.0, 0.0, -30.0]);
     // Установка смещений для пола
     carpet.setOffsets([0.0, -30.0, -70.0]);
     // Установка смещений для sphere
-    sphere.setOffsets([50.0, 15.0, -90.0]);
+    sphere.setOffsets([10.0, -15.0, -30.0]);
 
     // Матрица проекций
     let mvpMatrix = mat4.create();
@@ -544,13 +550,12 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     mat4.perspective(mvpMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, Infinity);
 
     // Камера
-    let cameraPosition = vec3.fromValues(0, 0, -80);
-    let cameraTarget = vec3.fromValues(50, 0, 0);
+    let cameraPosition = vec3.fromValues(0, 0, -5);
+    let cameraTarget = vec3.fromValues(0, 0, 0);
     let cameraUp = vec3.fromValues(0, 1, 0);
 
     // Параметры источников света
     let pointLightPosition = [10.0, 10.0, 10.0];
-    let spotLightPosition = [5.0, 5.0, 5.0];
     let spotLightCutoff = Math.cos(Math.PI / 20);
 
     // Обработчики для ползунков
@@ -595,7 +600,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         {
             case "tree": currentFigure = tree;
                             break;
-            case "kinders": currentFigure = kinder;
+            case "ship": currentFigure = ship;
                             break;   
             case "balloon":    currentFigure = balloon;
                             break;
@@ -619,31 +624,44 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
             case "toonshading": currentFigure.lighting = "toonshading";
                                 break;
             case "other": currentFigure.lighting = "other";
-            break;
+                          break;
         }
 
         currentFigure.changeLightingModel();
     });
 
+    let sendGift = false;
+    let isSended = false;
+    let delta = 0;
+    
+    let startPosX = 0;
+    let startPosY = 0;
+    let startPosZ = 0;
+
     // Рендеринг
     function render() 
     {
         gl.uniform3fv(uViewPosition, cameraPosition);
-        angle += 0.04;
-    
-        // Обновляем углы для каждого kinder
-        for (let i = 0; i < kinderAngles.length; i++) {
-            kinderAngles[i] += 0.01; // Скорость вращения
-        }
 
         const newOffsets = new Float32Array([
-            Math.cos(kinderAngles[0]) * orbitRadius, 50.0, Math.sin(kinderAngles[0]) * orbitRadius - 50,
-            //Math.cos(kinderAngles[1]) * orbitRadius, 20.0, Math.sin(kinderAngles[1]) * orbitRadius - 50,
-            //Math.cos(kinderAngles[2]) * orbitRadius, 20.0, Math.sin(kinderAngles[2]) * orbitRadius - 50,
-            //Math.cos(kinderAngles[3]) * orbitRadius, 20.0, Math.sin(kinderAngles[3]) * orbitRadius - 50
+            shift_x, shift_y, shift_z,
         ]);
-    
-        kinder.setOffsets(newOffsets);
+
+        let spotLightPosition = [shift_x, shift_y-5, shift_z-5];
+
+        if (sendGift)
+        {
+            isSended = true;
+            sendGift = false;
+            startPosX = shift_x;
+            startPosY = shift_y-5;
+            startPosZ = shift_z;
+        }
+
+        const giftOffset = new Float32Array([startPosX, startPosY-delta, startPosZ]);
+
+        ship.setOffsets(newOffsets);
+        kinder.setOffsets(giftOffset)
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -666,7 +684,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
             if (spotLightEnabled) {
                 gl.uniform3fv(uSpotLightPosition, spotLightPosition);
-                gl.uniform3fv(uSpotLightDirection, [0.0, 0.0, -1.0]);
+                gl.uniform3fv(uSpotLightDirection, [0.0, -1.0, 0.0]);
                 gl.uniform3fv(uSpotLightColor, [1.0, 1.0, 1.0]);
                 gl.uniform1f(uSpotLightCutoff, spotLightCutoff);
                 gl.uniform1f(uSpotLightExponent, 2.0);
@@ -680,10 +698,10 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         setParameters(tree.gl);
         tree.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
-        // Отрисовка kinder
-        changeLocations(kinder.gl, kinder.program);
-        setParameters(kinder.gl);
-        kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
+        // Отрисовка ship
+        changeLocations(ship.gl, ship.program);
+        setParameters(ship.gl);
+        ship.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
         //Отрисовка balloon
         changeLocations(balloon.gl, balloon.program);
@@ -700,10 +718,58 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         setParameters(sphere.gl);
         sphere.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
         
+        if (isSended)
+        {
+            changeLocations(kinder.gl, kinder.program);
+            setParameters(kinder.gl);
+            kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
+            delta += 0.3
+            if (startPosY - delta <= -23)
+            {
+                delta = 0;
+                startPos = 0;
+                isSended = false;
+            }
+        }
+
         requestAnimationFrame(render);
     }
 
     gl.clearColor(0.6, 0.8, 1, 1);
     gl.enable(gl.DEPTH_TEST);
     render();
+
+    //обработчики
+    document.addEventListener("keydown", (event) => {
+        console.log(event.key);
+        const dir = vec3.create();
+        vec3.subtract(dir, cameraTarget, cameraPosition);
+        vec3.normalize(dir, dir);
+        switch (event.code) {
+            case "KeyW":
+                shift_z += -shipSpeed;
+                break;
+            case "KeyS":
+                shift_z += shipSpeed;
+                break;    
+            case "KeyA":
+                shift_x += -shipSpeed;
+                break;
+            case "KeyD":
+                shift_x += shipSpeed;
+                break;
+
+            case "ArrowUp":
+                shift_y += shipSpeed;
+                break;
+            case "ArrowDown":
+                shift_y += -shipSpeed;
+                break;
+
+            case 'Space':
+                if(!isSended)
+                    sendGift = true;
+                break;
+            }
+    });
 })();
