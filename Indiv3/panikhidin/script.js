@@ -513,7 +513,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     // Создание объектов
     const airship = new GLObject(gl, program, "Airship.obj", "Airship.png", "phong", [1.5, 1.5, 1.5]);
     const tree = new GLObject(gl, program, "tree.obj", "tree.png", "phong", [0.2, 0.2, 0.2]);
-    const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [2.0, 2.0, 2.0]);
+    const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [1.0, 1.0, 1.0]);
     const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
     // const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
     // Инициализация объектов
@@ -531,7 +531,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     tree.setOffsets([0.0, -20.0, -50.0]);
 
     //Установка смещений для bus2 
-    bus2.setOffsets([-30.0, -20.0, -70.0]);
+    bus2.setOffsets([-10.0, -20.0, -50.0]);
     //Установка смещений для пола
     carpet.setOffsets([0.0, -30.0, -70.0]);
     //Установка смещений для sphere
