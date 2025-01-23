@@ -512,13 +512,13 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
     // Создание объектов
     const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1.5, 1.5, 1.5]);
-    const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [4.0, 4.0, 4.0]);
+    const tree = new GLObject(gl, program, "tree.obj", "tree.png", "phong", [0.5, 0.5, 0.5]);
     const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [2.0, 2.0, 2.0]);
     const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
     const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
     // Инициализация объектов
     await kinder.init();
-    await balloon.init();
+    await tree.init();
     await bus2.init();
     await carpet.init();
     await sphere.init();
@@ -528,7 +528,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     const orbitRadius = 40;
 
     // Установка смещений для balloon
-    balloon.setOffsets([0.0, 0.0, -50.0]);
+    tree.setOffsets([0.0, -20.0, -50.0]);
 
     //Установка смещений для bus2 
     bus2.setOffsets([-30.0, -20.0, -70.0]);
@@ -585,13 +585,13 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
 
     // Обработчик выпадающего списка фигур
-    let currentFigure = balloon;
+    let currentFigure = tree;
     selectFigure.addEventListener('change', (e) => {
         const selectedValue = e.target.value;
 
         switch (selectedValue)
         {
-            case "balloon": currentFigure = balloon;
+            case "balloon": currentFigure = tree;
                             break;
             case "kinders": currentFigure = kinder;
                             break;   
@@ -656,7 +656,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
             }
 
             if (directLightEnabled) {
-                gl.uniform3fv(uDirectionalLightDirection, [-2.0, 0.0, -1.0]);
+                gl.uniform3fv(uDirectionalLightDirection, [-1.0, -1.0, 0.0]);
                 gl.uniform3fv(uDirectionalLightColor, [1.0, 1.0, 1.0]);
             } else {
                 gl.uniform3fv(uDirectionalLightColor, [0.0, 0.0, 0.0]);
@@ -674,9 +674,9 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         }
 
         // Отрисовка balloon
-        changeLocations(balloon.gl, balloon.program);
-        setParameters(balloon.gl);
-        balloon.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
+        changeLocations(tree.gl, tree.program);
+        setParameters(tree.gl);
+        tree.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
         // Отрисовка kinder
         changeLocations(kinder.gl, kinder.program);
