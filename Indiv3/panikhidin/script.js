@@ -512,16 +512,16 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
     // Создание объектов
     const airship = new GLObject(gl, program, "Airship.obj", "Airship.png", "phong", [1.5, 1.5, 1.5]);
-    const tree = new GLObject(gl, program, "tree.obj", "tree.png", "phong", [0.5, 0.5, 0.5]);
+    const tree = new GLObject(gl, program, "tree.obj", "tree.png", "phong", [0.2, 0.2, 0.2]);
     const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [2.0, 2.0, 2.0]);
     const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
-    const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
+    // const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
     // Инициализация объектов
     await airship.init();
     await tree.init();
     await bus2.init();
     await carpet.init();
-    await sphere.init();
+    // await sphere.init();
     // Установка смещений для kinder
     let angle = 0;
     const kinderAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
@@ -535,7 +535,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     //Установка смещений для пола
     carpet.setOffsets([0.0, -30.0, -70.0]);
     //Установка смещений для sphere
-    sphere.setOffsets([30.0, -15.0, -40.0]);
+    // sphere.setOffsets([30.0, -15.0, -40.0]);
 
     // Матрица проекций
     let mvpMatrix = mat4.create();
@@ -599,8 +599,8 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
                             break;
             case "carpet":  currentFigure = carpet;
                             break;
-            case "sphere":  currentFigure = sphere;
-                            break;
+            // case "sphere":  currentFigure = sphere;
+            //                 break;
         }
 
         selectLighting.value = currentFigure.lighting;
@@ -694,9 +694,9 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         carpet.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
         
         //отрисовка sphere
-        changeLocations(sphere.gl, sphere.program);
-        setParameters(sphere.gl);
-        sphere.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
+        // changeLocations(sphere.gl, sphere.program);
+        // setParameters(sphere.gl);
+        // sphere.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
         
         requestAnimationFrame(render);
     }
