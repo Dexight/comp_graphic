@@ -414,7 +414,7 @@ class GLObject
 
     setOffsets(offsets) { this.offsets = new Float32Array(offsets); }
 
-    render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp) 
+    render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp, isSanki = false) 
     {
         updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, cameraUp);
 
@@ -443,6 +443,8 @@ class GLObject
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         this.gl.uniform1i(uTextureLocation, 0);
 
+        if (isSanki)
+        mat4.rotateY(modelMatrix, modelMatrix, - Math.PI / 2);
         mat4.scale(modelMatrix, modelMatrix, this.scale);
         this.gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
         this.gl.uniformMatrix4fv(uMVPMatrix, false, mvpMatrix);
@@ -516,7 +518,8 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     const balloon = new GLObject(gl, program, "balloon.obj", "balloon.png", "phong", [1.0, 1.0, 1.0]);
     const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0]);
     const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [5.0, 5.0, 5.0]);
-    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phing", [1, 1, 1]);
+    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1, 1, 1]);
+    const sanki = new GLObject(gl, program, "sanki.obj", "sanki.bmp", "phong", [0.01, 0.02, 0.02]);
 
     // Инициализация объектов
     await ship.init();
@@ -525,11 +528,9 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     await carpet.init();
     await sphere.init();
     await kinder.init();
+    await sanki.init();
 
     // Установка смещений для ship
-    //let angle = 0;
-    //const shipAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
-    //const orbitRadius = 20;
     let shipSpeed = 0.3;
     let shift_x = 0;
     let shift_y = 10;
@@ -590,7 +591,6 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         directLightEnabled = event.target.checked;
     });
 
-
     // Обработчик выпадающего списка фигур
     let currentFigure = tree;
     selectFigure.addEventListener('change', (e) => {
@@ -607,6 +607,8 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
             case "carpet":  currentFigure = carpet;
                             break;
             case "sphere":  currentFigure = sphere;
+                            break;
+            case "sanki":  currentFigure = sanki;
                             break;
         }
 
@@ -638,9 +640,18 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     let startPosY = 0;
     let startPosZ = 0;
 
+    //sanki
+    let sanki_x = -50;
+    let sanki_y = -23;
+    let sanki_z = -25;
+
     // Рендеринг
     function render() 
     {
+        sanki_x += 0.5;
+        if (sanki_x > 50)
+            sanki_x = -50;
+
         gl.uniform3fv(uViewPosition, cameraPosition);
 
         const newOffsets = new Float32Array([
@@ -662,6 +673,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
 
         ship.setOffsets(newOffsets);
         kinder.setOffsets(giftOffset)
+        sanki.setOffsets([sanki_x, sanki_y, sanki_z]);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -718,6 +730,12 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         setParameters(sphere.gl);
         sphere.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp)
         
+        //отрисовка sanki
+        changeLocations(sanki.gl, sanki.program);
+        setParameters(sanki.gl);
+        sanki.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp, true)
+        
+
         if (isSended)
         {
             changeLocations(kinder.gl, kinder.program);
