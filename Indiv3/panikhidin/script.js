@@ -511,13 +511,13 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     directLightEnabled = false;
 
     // Создание объектов
-    const kinder = new GLObject(gl, program, "kinder.obj", "kinder.png", "phong", [1.5, 1.5, 1.5]);
+    const airship = new GLObject(gl, program, "Airship.obj", "Airship.png", "phong", [1.5, 1.5, 1.5]);
     const tree = new GLObject(gl, program, "tree.obj", "tree.png", "phong", [0.5, 0.5, 0.5]);
     const bus2 = new GLObject(gl, program, "bus2.obj", "bus2.png", "phong", [2.0, 2.0, 2.0]);
     const carpet = new GLObject(gl, program, "cube.obj", "carpet.png", "phong", [1000.0,7.0,1000.0])
     const sphere = new GLObject(gl, program, "sphere.obj","sphere.png", "phong", [10.0, 10.0, 10.0] )
     // Инициализация объектов
-    await kinder.init();
+    await airship.init();
     await tree.init();
     await bus2.init();
     await carpet.init();
@@ -525,7 +525,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     // Установка смещений для kinder
     let angle = 0;
     const kinderAngles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
-    const orbitRadius = 40;
+    const orbitRadius = 60;
 
     // Установка смещений для balloon
     tree.setOffsets([0.0, -20.0, -50.0]);
@@ -542,7 +542,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
     let modelMatrix = mat4.create();
     mat4.perspective(mvpMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, Infinity);
 
-    let cameraPosition = vec3.fromValues(0, 0, -5);
+    let cameraPosition = vec3.fromValues(0, 10, -60);
     let cameraTarget = vec3.fromValues(0, 0, 0);
     let cameraUp = vec3.fromValues(0, 1, 0);
 
@@ -593,7 +593,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         {
             case "balloon": currentFigure = tree;
                             break;
-            case "kinders": currentFigure = kinder;
+            case "kinders": currentFigure = airship;
                             break;   
             case "bus2":    currentFigure = bus2;
                             break;
@@ -635,13 +635,13 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         }
 
         const newOffsets = new Float32Array([
-            Math.cos(kinderAngles[0]) * orbitRadius, -5.0, Math.sin(kinderAngles[0]) * orbitRadius - 50,
-            Math.cos(kinderAngles[1]) * orbitRadius, -5.0, Math.sin(kinderAngles[1]) * orbitRadius - 50,
-            Math.cos(kinderAngles[2]) * orbitRadius, -5.0, Math.sin(kinderAngles[2]) * orbitRadius - 50,
-            Math.cos(kinderAngles[3]) * orbitRadius, -5.0, Math.sin(kinderAngles[3]) * orbitRadius - 50
+            Math.cos(kinderAngles[0]) * orbitRadius, 20.0, Math.sin(kinderAngles[0]) * orbitRadius - 50,
+            // Math.cos(kinderAngles[1]) * orbitRadius, -5.0, Math.sin(kinderAngles[1]) * orbitRadius - 50,
+            // Math.cos(kinderAngles[2]) * orbitRadius, -5.0, Math.sin(kinderAngles[2]) * orbitRadius - 50,
+            // Math.cos(kinderAngles[3]) * orbitRadius, -5.0, Math.sin(kinderAngles[3]) * orbitRadius - 50
         ]);
     
-        kinder.setOffsets(newOffsets);
+        airship.setOffsets(newOffsets);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -679,9 +679,9 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         tree.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
         // Отрисовка kinder
-        changeLocations(kinder.gl, kinder.program);
-        setParameters(kinder.gl);
-        kinder.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
+        changeLocations(airship.gl, airship.program);
+        setParameters(airship.gl);
+        airship.render(modelMatrix, mvpMatrix, aPosition, aTexCoord, aOffsetLocation, uTextureLocation, uModelMatrix, uMVPMatrix, cameraPosition, cameraTarget, cameraUp);
 
         //Отрисовка bus2
         changeLocations(bus2.gl, bus2.program);
@@ -701,7 +701,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         requestAnimationFrame(render);
     }
 
-    gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0, 0.8, 1.0, 1);
     gl.enable(gl.DEPTH_TEST);
     render();
 })();
