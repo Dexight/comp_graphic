@@ -703,7 +703,7 @@ function updateModelViewMatrix(modelMatrix, cameraPosition, cameraTarget, camera
         requestAnimationFrame(render);
     }
 
-    gl.clearColor(0, 0, 0, 1);
+    gl.clearColor(0.6, 0.8, 1, 1);
     gl.enable(gl.DEPTH_TEST);
     render();
 })();
